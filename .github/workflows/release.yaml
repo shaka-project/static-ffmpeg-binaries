@@ -1,0 +1,174 @@
+name: Release
+
+# Runs when a new tag is created.  Creates a release for that tag, then builds
+# ffmpeg and ffprobe on all OS & CPU combinations, then attaches them to the
+# release.
+#TODO: run on tag, not every push
+on: push
+#on:
+#  push:
+#    tags
+
+env:
+  FFMPEG_TAG: n4.4
+  LIBVPX_TAG: v1.9.0
+  AOM_TAG: v3.1.2
+  X264_TAG: stable
+  X265_TAG: stable
+  LAME_VERSION: 3.100
+  OPUS_VERSION: 1.3.1
+  VORBIS_VERSION: 1.3.7
+
+jobs:
+  # FIXME: draft release
+#  draft_release:
+#    name: Draft release
+#    needs: setup
+#    runs-on: ubuntu-latest
+#    outputs:
+#      release_id: ${{ steps.draft_release.outputs.id }}
+#    steps:
+#      - name: Draft release
+#        id: draft_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+#        with:
+#          tag_name: ${{ github.event.inputs.tag}}
+#          release_name: ${{ github.event.inputs.tag}}
+#          body: ${{ github.event.inputs.tag }}
+#          draft: true
+
+  build:
+    # FIXME: depend on draft_release
+#    needs: draft_release
+    strategy:
+      matrix:
+        # TODO: Windows
+        # TODO: Mac
+        # TODO: arm64
+        #os: ["ubuntu-latest", "macos-latest", "windows-latest", "linux-arm64"]
+        os: ["ubuntu-latest"]
+        include:
+          - os: ubuntu-latest
+            os_name: linux
+            target_arch: x64
+            exe_ext: ""
+
+    name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Install packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt -y install \
+            nasm \
+            yasm \
+            libffmpeg-nvenc-dev \
+            libvdpau-dev
+
+      - name: Install libvpx
+        run: |
+          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
+          cd libvpx
+          ./configure \
+            --enable-vp8 \
+            --enable-vp9 \
+            --enable-runtime-cpu-detect \
+            --enable-static \
+            --disable-shared
+          make
+          sudo make install
+
+      - name: Install aom
+        run: |
+          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
+          mkdir aom_build
+          cd aom_build
+          cmake ../aom \
+            -DENABLE_DOCS=OFF \
+            -DENABLE_EXAMPLES=OFF \
+            -DENABLE_TESTS=OFF \
+            -DENABLE_TESTDATA=OFF \
+            -DENABLE_TOOLS=OFF \
+            -DCONFIG_RUNTIME_CPU_DETECT=1 \
+            -DCONFIG_SHARED=0
+          make
+          sudo make install
+
+      - name: Install x264
+        run: |
+          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
+          cd x264
+          ./configure \
+            --enable-static
+          make
+          sudo make install
+
+      - name: Install x265
+        run: |
+          hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
+          cd x265/build
+          cmake ../source
+          make
+          sudo make install
+
+      - name: Install lame
+        run: |
+          curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
+          tar xf lame-"$LAME_VERSION".tar.gz
+          cd lame-"$LAME_VERSION"
+          ./configure \
+            --enable-static \
+            --disable-shared
+          make
+          sudo make install
+
+      - name: Install opus
+        run: |
+          curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
+          tar xf opus-"$OPUS_VERSION".tar.gz
+          cd opus-"$OPUS_VERSION"
+          ./configure \
+            --enable-static \
+            --disable-shared
+          make
+          sudo make install
+          # The pkgconfig files for opus don't work in ffmpeg, at least on arm, without
+          # this edit to insist on linking libm after libopus.
+          sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
+
+      - name: Build ffmpeg and ffprobe
+        run: |
+          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
+          cd ffmpeg
+          # FIXME: not static binaries yet?
+          ./configure \
+            --disable-ffplay \
+            --enable-libvpx \
+            --enable-libaom \
+            --enable-libx264 \
+            --enable-libx265 \
+            --enable-libmp3lame \
+            --enable-libopus \
+            --enable-nvenc \
+            --enable-vdpau \
+            --enable-runtime-cpudetect \
+            --enable-gpl \
+            --enable-static
+          make
+
+  # FIXME: attach binaries
+  # FIXME: publish
+#  publish_release:
+#    name: Publish release
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Publish release
+#        uses: eregon/publish-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+#        with:
+#          release_id: ${{ needs.draft_release.outputs.release_id }}
