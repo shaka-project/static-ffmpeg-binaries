@@ -17,7 +17,7 @@ inputs:
 
 outputs:
   release_id:
-    description: The ID of a newly-created release, set by the draft_release method.
+    description: The ID of a newly-created release from the draft_release method
     value: ${{ steps.call-repo-api.outputs.release_id }}
 
 runs:
@@ -33,7 +33,8 @@ runs:
         import os
         import urllib.request
 
-        def call_api(path, data=None, headers=None, method=None, get_json=True, upload=False):
+        def call_api(path, data=None, headers=None, method=None, get_json=True,
+                     upload=False):
           repo = os.environ["GITHUB_REPOSITORY"]
           if upload:
             url = "https://upload.github.com/repos/{}{}".format(repo, path)
@@ -47,7 +48,13 @@ runs:
             method = "POST" if data else "GET"
 
           # For debugging:
-          print({'path': path, 'data': data, 'headers': headers, 'method': method})
+          print({
+            "method": method,
+            "path": path,
+            "url": url,
+            "headers": headers,
+            "data": data,
+          })
 
           auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
           headers["Authorization"] = "Basic {}".format(auth_token)
@@ -90,7 +97,8 @@ runs:
           path = "/releases/{}/assets?name={}".format(release_id, base_name)
           with open(asset_path, "rb") as f:
             data = f.read()
-          call_api(path, data, headers={"Content-Type": mime_type}, upload=True)
+          headers = {"Content-Type": mime_type}
+          call_api(path, data, headers, upload=True, method="PUT")
 
         def upload_all_assets(release_id, folder):
           for asset in os.listdir(folder):
@@ -98,7 +106,7 @@ runs:
             # This returns a tuple of (type, encoding), where type can be None
             mime_type = mimetypes.guess_type(asset_path)[0]
             if not mime_type:
-              mime_type = 'application/octet-stream'
+              mime_type = "application/octet-stream"
             upload_asset(release_id, asset_path, mime_type)
 
         def download_all_assets(release_id, output_path):
