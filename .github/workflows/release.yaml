@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Checkout repo
         shell: bash
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" -b "$GITHUB_REF"
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY"
 
       - name: Draft release
         id: draft_release
@@ -199,7 +199,7 @@ jobs:
 
       - name: Checkout repo
         shell: bash
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" -b "$GITHUB_REF"
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY"
 
       - name: Attach assets to release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
