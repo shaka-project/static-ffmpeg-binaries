@@ -202,6 +202,14 @@ jobs:
         shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
+      # FIXME: debugging
+      - name: Debug previous job outputs
+        shell: bash
+        run: |
+          # What if we output all the outputs combined?  What would we see?
+          # Thanks, https://stackoverflow.com/a/59201610 !
+          echo "OUTPUTS: ${{join(needs.draft_release.outputs.*, '\n')}}"
+
       - name: Attach assets to release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:

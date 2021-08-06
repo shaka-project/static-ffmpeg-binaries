@@ -15,6 +15,10 @@ inputs:
     description: A high-level method to invoke.  See action source for details.
     required: true
 
+outputs:
+  release_id:
+    description: The ID of a newly-created release, set by the draft_release method.
+
 runs:
   using: composite
   steps:
@@ -71,10 +75,6 @@ runs:
           }
           body = call_api("/releases", data)
           release_id = str(body["id"])
-          # TODO: Cleanup debug
-          print("Release ID: {}".format(release_id))
-          print("Setting output release_id={}".format(release_id))
-          #
           print("::set-output name=release_id::{}".format(release_id))
 
         def upload_asset(release_id, asset_path, mime_type):
