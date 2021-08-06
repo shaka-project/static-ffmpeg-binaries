@@ -27,15 +27,32 @@ jobs:
     steps:
       - name: Draft release
         id: draft_release
-        # TODO: See if we can do this ourselves with the API.
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          body: ""
-          draft: true
+        shell: python
+        run: |
+          from __future__ import print_function
+          import base64
+          import json
+          import os
+          import urllib.request
+          url = "https://api.github.com/repos/{}/releases".format(
+              os.environ["GITHUB_REPOSITORY"])
+          # Turn "refs/tags/foo" into "foo".
+          tag_name = "${{ github.ref }}".split("/").pop()
+          data = {
+            "tag_name": tag_name,
+            "name": tag_name,
+            "draft": True,
+          }
+          auth_token = base64.encodestring("%s:%s" % (
+              "shaka-bot", "${{ secrets.SHAKA_BOT_TOKEN }}"))
+          headers = {
+            "Authorization": "Basic {}".format(auth_token),
+          }
+          req = urllib.request.Request(url, data, headers)
+          with urllib.request.urlopen(req) as resp:
+            body = json.load(resp)
+            release_id = body["id"]
+            print("::set-output name=release_id::{}".format(release_id))
 
   build:
     needs: draft_release
