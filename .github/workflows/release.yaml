@@ -5,7 +5,8 @@ name: Release
 # release.
 on:
   push:
-    tags
+    tags:
+      - "*"
 
 env:
   FFMPEG_TAG: n4.4
