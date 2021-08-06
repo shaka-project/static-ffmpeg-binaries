@@ -211,7 +211,7 @@ jobs:
 
   publish_release:
     name: Publish release
-    needs: build
+    needs: [draft_release, build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
