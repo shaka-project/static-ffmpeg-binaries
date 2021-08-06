@@ -37,6 +37,11 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: draft_release("${{ github.ref }}")
 
+      - name: Debug release ID from previous step
+        shell: bash
+        run: |
+          echo "step output: ${{ steps.draft_release_step.outputs.release_id }}"
+
   build:
     needs: draft_release
     strategy:
