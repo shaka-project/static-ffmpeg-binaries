@@ -36,6 +36,7 @@ runs:
             headers = {}
           if not method:
             method = "POST" if data else "GET"
+          print({'path': path, 'data': data, 'headers': headers, 'method': method})
 
           auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
           headers["Authorization"] = "Basic {}".format(auth_token)
@@ -77,7 +78,7 @@ runs:
           path = "/releases/{}/assets?name={}".format(release_id, base_name)
           with open(asset_path, "rb") as f:
             data = f.read()
-          call_api(path, data, {"Content-Type": mime_type})
+          call_api(path, data, headers={"Content-Type": mime_type})
 
         def upload_all_assets(release_id, folder):
           for asset in os.listdir(folder):
