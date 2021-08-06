@@ -37,10 +37,21 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: draft_release("${{ github.ref }}")
 
-      - name: Debug release ID from previous step
+      - name: Additional output variable for debugging
+        id: extra_debug_output
         shell: bash
         run: |
-          echo "step output: ${{ steps.draft_release_step.outputs.release_id }}"
+          echo "::set-output name=foo::bar"
+          echo "::set-output name=release_id_2::baz"
+
+      - name: Debug outputs from previous steps
+        shell: bash
+        run: |
+          echo "output release_id: ${{ steps.draft_release_step.outputs.release_id }}"
+          echo "output foo: ${{ steps.extra_debug_output.outputs.foo }}"
+          echo "output release_id_2: ${{ steps.extra_debug_output.outputs.release_id_2 }}"
+          echo "all draft_release_step outputs: ${{ join(steps.draft_release_step.outputs.*, ' ') }}"
+          echo "all extra_debug_output outputs: ${{ join(steps.extra_debug_output.outputs.*, ' ') }}"
 
   build:
     needs: draft_release
