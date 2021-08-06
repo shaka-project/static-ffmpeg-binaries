@@ -60,6 +60,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          set -x
           sudo apt -y install \
             nasm \
             yasm \
@@ -69,6 +70,7 @@ jobs:
       - name: Install libvpx
         shell: bash
         run: |
+          set -x
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
           ./configure \
@@ -83,6 +85,7 @@ jobs:
       - name: Install aom
         shell: bash
         run: |
+          set -x
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
           cd aom_build
@@ -100,6 +103,7 @@ jobs:
       - name: Install x264
         shell: bash
         run: |
+          set -x
           git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
           cd x264
           ./configure \
@@ -110,6 +114,7 @@ jobs:
       - name: Install x265
         shell: bash
         run: |
+          set -x
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
           cmake ../source
@@ -123,6 +128,7 @@ jobs:
       - name: Install lame
         shell: bash
         run: |
+          set -x
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
           tar xzf lame-"$LAME_VERSION".tar.gz
           cd lame-"$LAME_VERSION"
@@ -135,6 +141,7 @@ jobs:
       - name: Install opus
         shell: bash
         run: |
+          set -x
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
           tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
@@ -150,6 +157,7 @@ jobs:
       - name: Build ffmpeg and ffprobe
         shell: bash
         run: |
+          set -x
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
           ./configure \
@@ -176,6 +184,7 @@ jobs:
       - name: Prepare artifacts
         shell: bash
         run: |
+          set -x
           mkdir artifacts
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
           cp ffmpeg/ffmpeg artifacts/ffmpeg"$SUFFIX"
