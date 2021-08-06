@@ -48,13 +48,13 @@ runs:
             method = "POST" if data else "GET"
 
           # For debugging:
-          print({
-            "method": method,
-            "path": path,
-            "url": url,
-            "headers": headers,
-            "data": data,
-          })
+          #print({
+          #  "method": method,
+          #  "path": path,
+          #  "url": url,
+          #  "headers": headers,
+          #  "data": data,
+          #})
 
           auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
           headers["Authorization"] = "Basic {}".format(auth_token)
@@ -88,7 +88,7 @@ runs:
             "draft": True,
           }
           body = call_api("/releases", data)
-          print("Draft release body:", body)
+          #print("Draft release body:", body)
           release_id = str(body["id"])
           print("::set-output name=release_id::{}".format(release_id))
 
