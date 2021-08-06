@@ -23,24 +23,19 @@ jobs:
     name: Draft release
     runs-on: ubuntu-latest
     outputs:
-      id: ${{ steps.draft_release_step.outputs.release_id }}
+      release_id: ${{ steps.draft_release.outputs.release_id }}
     steps:
       - name: Checkout repo
         shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Draft release
-        id: draft_release_step
+        id: draft_release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: draft_release("${{ github.ref }}")
-
-      - name: Debug outputs from previous steps
-        shell: bash
-        run: |
-          echo "output release_id: ${{ steps.draft_release_step.outputs.release_id }}"
 
   build:
     needs: draft_release
@@ -212,7 +207,7 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: upload_all_assets("${{ needs.draft_release.outputs.id }}", "assets/")
+          method: upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
 
   publish_release:
     name: Publish release
@@ -228,10 +223,10 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: download_all_assets("${{ needs.draft_release.outputs.id }}", "assets/")
+          method: download_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
 
-      - name: Checksum all release assets
-        id: checksum
+      - name: Calculate MD5 sums of all release assets
+        id: md5sum
         shell: bash
         run: |
           cd assets
@@ -246,4 +241,4 @@ jobs:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           # TODO: publish for real, draft=False
-          method: update_release("${{ needs.draft_release.outputs.id }}", { body="${{ steps.checksum.outputs.sums }}", draft=True })
+          method: update_release("${{ needs.draft_release.outputs.release_id }}", { body="${{ steps.md5sum.outputs.sums }}", draft=True })
