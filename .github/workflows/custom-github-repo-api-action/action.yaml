@@ -110,7 +110,7 @@ runs:
             upload_asset(release_id, asset_path, mime_type)
 
         def download_all_assets(release_id, output_path):
-          if not os.exists(output_path):
+          if not os.path.exists(output_path):
             os.mkdir(output_path)
 
           path = "/releases/{}/assets".format(release_id)
