@@ -1,0 +1,104 @@
+name: GitHub Repo API Action
+
+description: |
+  A reusable action to talk to the GitHub API, wihtout relying on external
+  actions that could be affected by a supply-chain attack.
+
+inputs:
+  username:
+    description: A username for authentication to the GitHub API.
+    required: true
+  token:
+    description: A token for authentication to the GitHub API.
+    required: true
+  method:
+    description: A high-level method to invoke.  See action source for details.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Call Repo API
+      shell: python
+      run: |
+        import base64
+        import json
+        import os
+        import urllib.request
+
+        def call_api(path, data=None, headers=None, method=None, get_json=True):
+          repo = os.environ["GITHUB_REPOSITORY"]
+          url = "https://api.github.com/repos/{}{}".format(repo, path)
+          login = "${{ inputs.username }}:${{ inputs.token }}"
+
+          if not headers:
+            headers = {}
+          if not method:
+            method = "POST" if data else "GET"
+
+          auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
+          headers["Authorization"] = "Basic {}".format(auth_token)
+
+          if type(data) is dict:
+            data_bytes = json.dumps(data).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+          elif type(data) is str:
+            data_bytes = data.encode("utf-8")
+          elif not data:
+            data_bytes = None
+          else:
+            assert(type(data) is bytes)
+            data_bytes = data
+
+          req = urllib.request.Request(url, data_bytes, headers)
+          with urllib.request.urlopen(req) as resp:
+            if get_json:
+              body = json.load(resp)
+              return body
+            else:
+              return resp.read()
+
+        def draft_release(tag_name):
+          # Turns "refs/tags/foo" into "foo"
+          name = tag_name.split("/").pop()
+
+          data = {
+            "tag_name": tag_name,
+            "name": name,
+            "draft": True,
+          }
+          body = call_api("/releases", data)
+          release_id = body["id"]
+          print("::set-output name=release_id::{}".format(release_id))
+
+        def upload_asset(release_id, asset_path, mime_type):
+          base_name = os.path.basename(asset_path)
+          path = "/releases/{}/assets?name={}".format(release_id, base_name)
+          with open(asset_path, "rb") as f:
+            data = f.read()
+          call_api(path, data, {"Content-Type": mime_type})
+
+        def upload_all_assets(release_id, folder):
+          for asset in os.listdir(folder):
+            asset_path = os.path.join(folder, asset)
+            mime_type = mimetypes.guess_type(asset_path)
+            upload_asset(release_id, asset_path, mime_type)
+
+        def download_all_assets(release_id, output_path):
+          if not os.exists(output_path):
+            os.mkdir(output_path)
+
+          path = "/releases/{}/assets".format(release_id)
+          asset_list = call_api(path)
+          for asset in asset_list:
+            name = asset["name"]
+            url = asset["browser_download_url"]
+            with urllib.request.urlopen(url) as download:
+              with open(os.path.join(output_path, name), "wb") as local_file:
+                local_file.write(download.read())
+
+        def update_release(release_id, **data):
+          path = "/releases/{}".format(release_id)
+          call_api(path, data, method="PATCH")
+
+        ${{ inputs.method }}

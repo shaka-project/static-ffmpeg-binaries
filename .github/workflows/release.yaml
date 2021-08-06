@@ -23,47 +23,19 @@ jobs:
     name: Draft release
     runs-on: ubuntu-latest
     outputs:
-      release_id: ${{ steps.draft_release.outputs.id }}
+      release_id: ${{ steps.draft_release.outputs.release_id }}
     steps:
-      - name: Debug Workflow Path and PWD
+      - name: Checkout repo
         shell: bash
-        run: |
-          echo "PWD = $(pwd)"
-          echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
-          echo "0 = $0"
-          echo "Contents, two levels up:"
-          find $(dirname $(dirname "$GITHUB_WORKSPACE"))
-          exit 1
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" -b "$GITHUB_REF"
 
       - name: Draft release
         id: draft_release
-        shell: python
-        run: |
-          import base64
-          import json
-          import os
-          import urllib.request
-          url = "https://api.github.com/repos/{}/releases".format(
-              os.environ["GITHUB_REPOSITORY"])
-          # Turn "refs/tags/foo" into "foo".
-          tag_name = "${{ github.ref }}".split("/").pop()
-          data = {
-            "tag_name": tag_name,
-            "name": tag_name,
-            "draft": True,
-          }
-          login = "{}:{}".format("shaka-bot", "${{ secrets.SHAKA_BOT_TOKEN }}")
-          auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
-          headers = {
-            "Authorization": "Basic {}".format(auth_token),
-            "Content-Type": "application/json",
-          }
-          data_bytes = json.dumps(data).encode("utf-8")
-          req = urllib.request.Request(url, data_bytes, headers)
-          with urllib.request.urlopen(req) as resp:
-            body = json.load(resp)
-            release_id = body["id"]
-            print("::set-output name=release_id::{}".format(release_id))
+        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
+        with:
+          username: shaka-bot
+          token: ${{ secrets.SHAKA_BOT_TOKEN }}
+          method: draft_release("${{ github.ref }}")
 
   build:
     needs: draft_release
@@ -212,41 +184,56 @@ jobs:
           # command here to make this step a success.
           true
 
-      - name: Prepare artifacts
+      - name: Prepare assets
         shell: bash
         run: |
           set -x
-          mkdir artifacts
+          mkdir assets
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
-          cp ffmpeg/ffmpeg artifacts/ffmpeg"$SUFFIX"
-          cp ffmpeg/ffprobe artifacts/ffprobe-"$SUFFIX"
+          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
+          cp ffmpeg/ffprobe assets/ffprobe-"$SUFFIX"
           # Show MD5 sums that can be verified by users later if they want to
           # check for authenticity.
-          cd artifacts
+          cd assets
           md5sum *
-          # TODO: Can we push the md5s into the release description?
-          # TODO: See if we can do this ourselves with the API.
 
-      - name: Attach artifacts to release
-        # TODO: See if we can do this ourselves with the API.
-        uses: dwenegar/upload-release-assets@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+      - name: Checkout repo
+        shell: bash
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" -b "$GITHUB_REF"
+
+      - name: Attach assets to release
+        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
-          release_id: ${{ needs.draft_release.outputs.release_id }}
-          assets_path: artifacts
+          username: shaka-bot
+          token: ${{ secrets.SHAKA_BOT_TOKEN }}
+          method: upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
 
+  publish_release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get all release assets
+        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
+        with:
+          username: shaka-bot
+          token: ${{ secrets.SHAKA_BOT_TOKEN }}
+          method: download_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
 
-  # FIXME: publish
-#  publish_release:
-#    name: Publish release
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Publish release
-#        # TODO: See if we can do this ourselves with the API.
-#        uses: eregon/publish-release@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
-#        with:
-#          release_id: ${{ needs.draft_release.outputs.release_id }}
+      - name: Checksum all release assets
+        id: checksum
+        shell: bash
+        run: |
+          cd assets
+          SUMS=$(md5sum *)
+          echo "::set-output name=sums::$SUMS"
+          # The sums are now in an output variable that we can use in the next
+          # step to set the release body.
+
+      - name: Publish release
+        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
+        with:
+          username: shaka-bot
+          token: ${{ secrets.SHAKA_BOT_TOKEN }}
+          # TODO: publish for real, draft=False
+          method: update_release("${{ needs.draft_release.outputs.release_id }}", { body="${{ steps.checksum.outputs.sums }}", draft=True })
