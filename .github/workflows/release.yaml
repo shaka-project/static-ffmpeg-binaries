@@ -25,6 +25,16 @@ jobs:
     outputs:
       release_id: ${{ steps.draft_release.outputs.id }}
     steps:
+      - name: Debug Workflow Path and PWD
+        shell: bash
+        run: |
+          echo "PWD = $(pwd)"
+          echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
+          echo "0 = $0"
+          echo "Contents, two levels up:"
+          find $(dirname $(dirname "$GITHUB_WORKSPACE"))
+          exit 1
+
       - name: Draft release
         id: draft_release
         shell: python
