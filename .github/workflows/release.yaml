@@ -29,7 +29,6 @@ jobs:
         id: draft_release
         shell: python
         run: |
-          from __future__ import print_function
           import base64
           import json
           import os
@@ -43,12 +42,14 @@ jobs:
             "name": tag_name,
             "draft": True,
           }
-          auth_token = base64.encodestring("%s:%s" % (
-              "shaka-bot", "${{ secrets.SHAKA_BOT_TOKEN }}"))
+          login = "{}:{}".format("shaka-bot", "${{ secrets.SHAKA_BOT_TOKEN }}")
+          auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
           headers = {
             "Authorization": "Basic {}".format(auth_token),
+            "Content-Type": "application/json",
           }
-          req = urllib.request.Request(url, data, headers)
+          data_bytes = json.dumps(data).encode("utf-8")
+          req = urllib.request.Request(url, data_bytes, headers)
           with urllib.request.urlopen(req) as resp:
             body = json.load(resp)
             release_id = body["id"]
