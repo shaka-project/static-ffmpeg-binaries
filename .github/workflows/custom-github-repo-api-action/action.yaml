@@ -18,11 +18,13 @@ inputs:
 outputs:
   release_id:
     description: The ID of a newly-created release, set by the draft_release method.
+    value: ${{ steps.call-repo-api.outputs.release_id }}
 
 runs:
   using: composite
   steps:
     - name: Call Repo API
+      id: call-repo-api
       shell: python
       run: |
         import base64
@@ -40,7 +42,9 @@ runs:
             headers = {}
           if not method:
             method = "POST" if data else "GET"
-          print({'path': path, 'data': data, 'headers': headers, 'method': method})
+
+          # For debugging:
+          #print({'path': path, 'data': data, 'headers': headers, 'method': method})
 
           auth_token = base64.b64encode(login.encode("utf-8")).decode("utf-8")
           headers["Authorization"] = "Basic {}".format(auth_token)

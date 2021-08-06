@@ -37,21 +37,10 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: draft_release("${{ github.ref }}")
 
-      - name: Additional output variable for debugging
-        id: extra_debug_output
-        shell: bash
-        run: |
-          echo "::set-output name=foo::bar"
-          echo "::set-output name=release_id_2::baz"
-
       - name: Debug outputs from previous steps
         shell: bash
         run: |
           echo "output release_id: ${{ steps.draft_release_step.outputs.release_id }}"
-          echo "output foo: ${{ steps.extra_debug_output.outputs.foo }}"
-          echo "output release_id_2: ${{ steps.extra_debug_output.outputs.release_id_2 }}"
-          echo "all draft_release_step outputs: ${{ join(steps.draft_release_step.outputs.*, ' ') }}"
-          echo "all extra_debug_output outputs: ${{ join(steps.extra_debug_output.outputs.*, ' ') }}"
 
   build:
     needs: draft_release
@@ -217,14 +206,6 @@ jobs:
       - name: Checkout repo
         shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-
-      # FIXME: debugging
-      - name: Debug previous job outputs
-        shell: bash
-        run: |
-          # What if we output all the outputs combined?  What would we see?
-          # Thanks, https://stackoverflow.com/a/59201610 !
-          echo "OUTPUTS: ${{join(needs.draft_release.outputs.*, '\n')}}"
 
       - name: Attach assets to release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
