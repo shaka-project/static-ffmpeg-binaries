@@ -72,7 +72,7 @@ runs:
           body = call_api("/releases", data)
           release_id = str(body["id"])
           # TODO: Cleanup debug
-          print("Release ID: {}".format(release_id)
+          print("Release ID: {}".format(release_id))
           print("Setting output release_id={}".format(release_id))
           #
           print("::set-output name=release_id::{}".format(release_id))
