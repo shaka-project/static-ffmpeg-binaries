@@ -218,6 +218,13 @@ jobs:
         shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
+      - name: Sleep to wait for uploaded assets to become available
+        # TODO: May not be a real solution.  I can fetch assets in curl, but
+        # time has passed by the time I can try it.  So what if I wait 1 minute
+        # between upload and download?
+        shell: bash
+        run: sleep 60s
+
       - name: Get all release assets
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
