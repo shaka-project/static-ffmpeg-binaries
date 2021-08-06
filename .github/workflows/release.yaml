@@ -3,11 +3,9 @@ name: Release
 # Runs when a new tag is created.  Creates a release for that tag, then builds
 # ffmpeg and ffprobe on all OS & CPU combinations, then attaches them to the
 # release.
-#TODO: run on tag, not every push
-on: push
-#on:
-#  push:
-#    tags
+on:
+  push:
+    tags
 
 env:
   FFMPEG_TAG: n4.4
@@ -20,28 +18,25 @@ env:
   VORBIS_VERSION: 1.3.7
 
 jobs:
-  # FIXME: draft release
-#  draft_release:
-#    name: Draft release
-#    needs: setup
-#    runs-on: ubuntu-latest
-#    outputs:
-#      release_id: ${{ steps.draft_release.outputs.id }}
-#    steps:
-#      - name: Draft release
-#        id: draft_release
-#        uses: actions/create-release@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
-#        with:
-#          tag_name: ${{ github.event.inputs.tag}}
-#          release_name: ${{ github.event.inputs.tag}}
-#          body: ${{ github.event.inputs.tag }}
-#          draft: true
+  draft_release:
+    name: Draft release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.draft_release.outputs.id }}
+    steps:
+      - name: Draft release
+        id: draft_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          release_name: ${{ github.event.inputs.tag }}
+          body: ${{ github.event.inputs.tag }}
+          draft: true
 
   build:
-    # FIXME: depend on draft_release
-#    needs: draft_release
+    needs: draft_release
     strategy:
       matrix:
         # TODO: Windows
@@ -61,6 +56,7 @@ jobs:
     steps:
       - name: Install packages
         if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt -y install \
             nasm \
@@ -69,6 +65,7 @@ jobs:
             libvdpau-dev
 
       - name: Install libvpx
+        shell: bash
         run: |
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
@@ -82,6 +79,7 @@ jobs:
           sudo make install
 
       - name: Install aom
+        shell: bash
         run: |
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
@@ -98,6 +96,7 @@ jobs:
           sudo make install
 
       - name: Install x264
+        shell: bash
         run: |
           git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
           cd x264
@@ -107,17 +106,23 @@ jobs:
           sudo make install
 
       - name: Install x265
+        shell: bash
         run: |
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
           cmake ../source
           make
           sudo make install
+          # This adjustment to the x265 linker flags is needed, at least on
+          # arm, to successfully link against it statically.  (-lgcc_s not
+          # found (or needed), and -lpthread missing)
+          sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i /usr/local/lib/pkgconfig/x265.pc
 
       - name: Install lame
+        shell: bash
         run: |
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
-          tar xf lame-"$LAME_VERSION".tar.gz
+          tar xzf lame-"$LAME_VERSION".tar.gz
           cd lame-"$LAME_VERSION"
           ./configure \
             --enable-static \
@@ -126,25 +131,29 @@ jobs:
           sudo make install
 
       - name: Install opus
+        shell: bash
         run: |
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
-          tar xf opus-"$OPUS_VERSION".tar.gz
+          tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
           ./configure \
             --enable-static \
             --disable-shared
           make
           sudo make install
-          # The pkgconfig files for opus don't work in ffmpeg, at least on arm, without
-          # this edit to insist on linking libm after libopus.
+          # The pkgconfig linker flags for static opus don't work when ffmpeg
+          # checks for opus in configure.  Linking libm after libopus fixes it.
           sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
 
       - name: Build ffmpeg and ffprobe
+        shell: bash
         run: |
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
-          # FIXME: not static binaries yet?
           ./configure \
+            --pkg-config-flags="--static" \
+            --extra-cflags="-static" \
+            --extra-ldflags="-static" \
             --disable-ffplay \
             --enable-libvpx \
             --enable-libaom \
@@ -158,8 +167,32 @@ jobs:
             --enable-gpl \
             --enable-static
           make
+          # Show that these are not dynamic executables.  Fail if they are.
+          ldd ffmpeg && exit 1
+          ldd ffprobe && exit 1
 
-  # FIXME: attach binaries
+      - name: Prepare artifacts
+        shell: bash
+        run: |
+          mkdir artifacts
+          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
+          cp ffmpeg/ffmpeg artifacts/ffmpeg"$SUFFIX"
+          cp ffmpeg/ffprobe artifacts/ffprobe-"$SUFFIX"
+          # Show MD5 sums that can be verified by users later if they want to
+          # check for authenticity.
+          cd artifacts
+          md5sum *
+          # TODO: Can we push the md5s into the release description?
+
+      - name: Attach artifacts to release
+        uses: dwenegar/upload-release-assets@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+        with:
+          release_id: ${{ needs.draft_release.outputs.release_id }}
+          assets_path: artifacts
+
+
   # FIXME: publish
 #  publish_release:
 #    name: Publish release
