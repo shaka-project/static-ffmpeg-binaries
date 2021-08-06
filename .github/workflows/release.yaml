@@ -56,133 +56,133 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Install packages
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -x
-          sudo apt -y install \
-            nasm \
-            yasm \
-            libffmpeg-nvenc-dev \
-            libvdpau-dev
-
-      - name: Install libvpx
-        shell: bash
-        run: |
-          set -x
-          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
-          cd libvpx
-          ./configure \
-            --enable-vp8 \
-            --enable-vp9 \
-            --enable-runtime-cpu-detect \
-            --enable-static \
-            --disable-shared
-          make
-          sudo make install
-
-      - name: Install aom
-        shell: bash
-        run: |
-          set -x
-          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
-          mkdir aom_build
-          cd aom_build
-          cmake ../aom \
-            -DENABLE_DOCS=OFF \
-            -DENABLE_EXAMPLES=OFF \
-            -DENABLE_TESTS=OFF \
-            -DENABLE_TESTDATA=OFF \
-            -DENABLE_TOOLS=OFF \
-            -DCONFIG_RUNTIME_CPU_DETECT=1 \
-            -DCONFIG_SHARED=0
-          make
-          sudo make install
-
-      - name: Install x264
-        shell: bash
-        run: |
-          set -x
-          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
-          cd x264
-          ./configure \
-            --enable-static
-          make
-          sudo make install
-
-      - name: Install x265
-        shell: bash
-        run: |
-          set -x
-          hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
-          cd x265/build
-          cmake ../source
-          make
-          sudo make install
-          # This adjustment to the x265 linker flags is needed, at least on
-          # arm, to successfully link against it statically.  (-lgcc_s not
-          # found (or needed), and -lpthread missing)
-          sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i /usr/local/lib/pkgconfig/x265.pc
-
-      - name: Install lame
-        shell: bash
-        run: |
-          set -x
-          curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
-          tar xzf lame-"$LAME_VERSION".tar.gz
-          cd lame-"$LAME_VERSION"
-          ./configure \
-            --enable-static \
-            --disable-shared
-          make
-          sudo make install
-
-      - name: Install opus
-        shell: bash
-        run: |
-          set -x
-          curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
-          tar xzf opus-"$OPUS_VERSION".tar.gz
-          cd opus-"$OPUS_VERSION"
-          ./configure \
-            --enable-static \
-            --disable-shared
-          make
-          sudo make install
-          # The pkgconfig linker flags for static opus don't work when ffmpeg
-          # checks for opus in configure.  Linking libm after libopus fixes it.
-          sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
+#      - name: Install packages
+#        if: runner.os == 'Linux'
+#        shell: bash
+#        run: |
+#          set -x
+#          sudo apt -y install \
+#            nasm \
+#            yasm \
+#            libffmpeg-nvenc-dev \
+#            libvdpau-dev
+#
+#      - name: Install libvpx
+#        shell: bash
+#        run: |
+#          set -x
+#          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
+#          cd libvpx
+#          ./configure \
+#            --enable-vp8 \
+#            --enable-vp9 \
+#            --enable-runtime-cpu-detect \
+#            --enable-static \
+#            --disable-shared
+#          make
+#          sudo make install
+#
+#      - name: Install aom
+#        shell: bash
+#        run: |
+#          set -x
+#          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
+#          mkdir aom_build
+#          cd aom_build
+#          cmake ../aom \
+#            -DENABLE_DOCS=OFF \
+#            -DENABLE_EXAMPLES=OFF \
+#            -DENABLE_TESTS=OFF \
+#            -DENABLE_TESTDATA=OFF \
+#            -DENABLE_TOOLS=OFF \
+#            -DCONFIG_RUNTIME_CPU_DETECT=1 \
+#            -DCONFIG_SHARED=0
+#          make
+#          sudo make install
+#
+#      - name: Install x264
+#        shell: bash
+#        run: |
+#          set -x
+#          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
+#          cd x264
+#          ./configure \
+#            --enable-static
+#          make
+#          sudo make install
+#
+#      - name: Install x265
+#        shell: bash
+#        run: |
+#          set -x
+#          hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
+#          cd x265/build
+#          cmake ../source
+#          make
+#          sudo make install
+#          # This adjustment to the x265 linker flags is needed, at least on
+#          # arm, to successfully link against it statically.  (-lgcc_s not
+#          # found (or needed), and -lpthread missing)
+#          sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i /usr/local/lib/pkgconfig/x265.pc
+#
+#      - name: Install lame
+#        shell: bash
+#        run: |
+#          set -x
+#          curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
+#          tar xzf lame-"$LAME_VERSION".tar.gz
+#          cd lame-"$LAME_VERSION"
+#          ./configure \
+#            --enable-static \
+#            --disable-shared
+#          make
+#          sudo make install
+#
+#      - name: Install opus
+#        shell: bash
+#        run: |
+#          set -x
+#          curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
+#          tar xzf opus-"$OPUS_VERSION".tar.gz
+#          cd opus-"$OPUS_VERSION"
+#          ./configure \
+#            --enable-static \
+#            --disable-shared
+#          make
+#          sudo make install
+#          # The pkgconfig linker flags for static opus don't work when ffmpeg
+#          # checks for opus in configure.  Linking libm after libopus fixes it.
+#          sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
 
       - name: Build ffmpeg and ffprobe
         shell: bash
         run: |
           set -x
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
-          cd ffmpeg
-          ./configure \
-            --pkg-config-flags="--static" \
-            --extra-cflags="-static" \
-            --extra-ldflags="-static" \
-            --disable-ffplay \
-            --enable-libvpx \
-            --enable-libaom \
-            --enable-libx264 \
-            --enable-libx265 \
-            --enable-libmp3lame \
-            --enable-libopus \
-            --enable-nvenc \
-            --enable-vdpau \
-            --enable-runtime-cpudetect \
-            --enable-gpl \
-            --enable-static
-          make
-          # Show that these are not dynamic executables.  Fail if they are.
-          ldd ffmpeg && exit 1
-          ldd ffprobe && exit 1
-          # After commands that we expect to fail, we still need a successful
-          # command here to make this step a success.
-          true
+#          cd ffmpeg
+#          ./configure \
+#            --pkg-config-flags="--static" \
+#            --extra-cflags="-static" \
+#            --extra-ldflags="-static" \
+#            --disable-ffplay \
+#            --enable-libvpx \
+#            --enable-libaom \
+#            --enable-libx264 \
+#            --enable-libx265 \
+#            --enable-libmp3lame \
+#            --enable-libopus \
+#            --enable-nvenc \
+#            --enable-vdpau \
+#            --enable-runtime-cpudetect \
+#            --enable-gpl \
+#            --enable-static
+#          make
+#          # Show that these are not dynamic executables.  Fail if they are.
+#          ldd ffmpeg && exit 1
+#          ldd ffprobe && exit 1
+#          # After commands that we expect to fail, we still need a successful
+#          # command here to make this step a success.
+#          true
 
       - name: Prepare assets
         shell: bash
@@ -190,8 +190,9 @@ jobs:
           set -x
           mkdir assets
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
-          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
-          cp ffmpeg/ffprobe assets/ffprobe-"$SUFFIX"
+#          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
+#          cp ffmpeg/ffprobe assets/ffprobe-"$SUFFIX"
+#         cp ffmpeg/README.md assets/ # FIXME: debugging
           # Show MD5 sums that can be verified by users later if they want to
           # check for authenticity.
           cd assets
