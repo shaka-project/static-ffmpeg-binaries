@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Checkout repo
         shell: bash
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY"
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Draft release
         id: draft_release
@@ -199,7 +199,7 @@ jobs:
 
       - name: Checkout repo
         shell: bash
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY"
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Attach assets to release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
@@ -213,6 +213,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        shell: bash
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+
       - name: Get all release assets
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
