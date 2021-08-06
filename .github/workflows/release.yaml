@@ -19,39 +19,22 @@ env:
   VORBIS_VERSION: 1.3.7
 
 jobs:
-  setup:
-    name: Setup
-    runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.compute_tag.outputs.tag }}
-    steps:
-      - name: Compute tag
-        id: compute_tag
-        # We would like to strip refs/tags/ off of the incoming ref and just
-        # use the tag name.  Subsequent jobs can refer to the "tag" output of
-        # this job to determine the correct tag name.
-        run: |
-          # Strip refs/tags/ from the input to get the tag name, then store
-          # that in output.
-          echo "::set-output name=tag::${{ github.ref }}" \
-            | sed -e 's@refs/tags/@@'
-
   draft_release:
     name: Draft release
-    needs: setup
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.draft_release.outputs.id }}
     steps:
       - name: Draft release
         id: draft_release
+        # TODO: See if we can do this ourselves with the API.
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
         with:
-          tag_name: ${{ needs.setup.outputs.tag }}
-          release_name: ${{ needs.setup.outputs.tag }}
-          body: ${{ needs.setup.outputs.tag }}
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          body: ""
           draft: true
 
   build:
@@ -202,8 +185,10 @@ jobs:
           cd artifacts
           md5sum *
           # TODO: Can we push the md5s into the release description?
+          # TODO: See if we can do this ourselves with the API.
 
       - name: Attach artifacts to release
+        # TODO: See if we can do this ourselves with the API.
         uses: dwenegar/upload-release-assets@v1
         env:
           GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
@@ -219,6 +204,7 @@ jobs:
 #    runs-on: ubuntu-latest
 #    steps:
 #      - name: Publish release
+#        # TODO: See if we can do this ourselves with the API.
 #        uses: eregon/publish-release@v1
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
