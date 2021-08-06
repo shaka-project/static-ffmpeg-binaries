@@ -70,7 +70,11 @@ runs:
             "draft": True,
           }
           body = call_api("/releases", data)
-          release_id = body["id"]
+          release_id = str(body["id"])
+          # TODO: Cleanup debug
+          print("Release ID: {}".format(release_id)
+          print("Setting output release_id={}".format(release_id))
+          #
           print("::set-output name=release_id::{}".format(release_id))
 
         def upload_asset(release_id, asset_path, mime_type):
