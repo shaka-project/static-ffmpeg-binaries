@@ -23,6 +23,7 @@ runs:
       run: |
         import base64
         import json
+        import mimetypes
         import os
         import urllib.request
 
