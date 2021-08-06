@@ -37,7 +37,7 @@ runs:
                      upload=False):
           repo = os.environ["GITHUB_REPOSITORY"]
           if upload:
-            url = "https://upload.github.com/repos/{}{}".format(repo, path)
+            url = "https://uploads.github.com/repos/{}{}".format(repo, path)
           else:
             url = "https://api.github.com/repos/{}{}".format(repo, path)
           login = "${{ inputs.username }}:${{ inputs.token }}"
@@ -98,7 +98,7 @@ runs:
           with open(asset_path, "rb") as f:
             data = f.read()
           headers = {"Content-Type": mime_type}
-          call_api(path, data, headers, upload=True, method="PUT")
+          call_api(path, data, headers, upload=True)
 
         def upload_all_assets(release_id, folder):
           for asset in os.listdir(folder):
