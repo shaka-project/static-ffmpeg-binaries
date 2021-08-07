@@ -218,18 +218,6 @@ jobs:
         shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
-      # First, we have to take the release out of draft mode.  Then, we can
-      # download the assets and use their MD5 sums to update the release notes.
-      # TODO: Verify that this is needed!  It appears that we also need to fix
-      # the draft release tag to avoid refs/tags/ in it, because that ends up
-      # causing issues with the download URLs.
-      - name: Publish release
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", draft=False)'
-
       - name: Get all release assets
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
@@ -247,9 +235,9 @@ jobs:
           # The sums are now in an output variable that we can use in the next
           # step to set the release body.
 
-      - name: Update release notes
+      - name: Publish release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", body="${{ steps.md5sum.outputs.sums }}")'
+          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", body="${{ steps.md5sum.outputs.sums }}", draft=False)'
