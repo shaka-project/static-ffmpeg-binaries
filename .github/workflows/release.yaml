@@ -202,6 +202,7 @@ jobs:
             PLATFORM_CONFIGURE_FLAGS="--enable-videotoolbox"
             # Building with nasm seems to fail, so uninstall it and make ffmpeg
             # use yasm instead.  We needed nasm before to build x264, though.
+            # See also https://wiki.libav.org/Platform/MacOSX
             brew uninstall nasm
           fi
           ./configure \
