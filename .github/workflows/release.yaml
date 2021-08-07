@@ -223,10 +223,16 @@ jobs:
           set -x
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export CFLAGS="-static"
+            export LDFLAGS="-static"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            export CFLAGS="-static"
+            # You can't do a _truly_ static build on macOS except the kernel.
+            # See https://stackoverflow.com/a/3801032
+          fi
           ./configure \
             --pkg-config-flags="--static" \
-            --extra-cflags="-static" \
-            --extra-ldflags="-static" \
             --disable-ffplay \
             --enable-libvpx \
             --enable-libaom \
