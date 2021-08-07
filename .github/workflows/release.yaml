@@ -104,6 +104,7 @@ jobs:
           # NOTE: yasm does not have checksums in the choco package.
           choco install \
             --allow-empty-checksums \
+            make \
             nasm \
             yasm
           # Don't use sudo in install commands on Windows.
@@ -251,8 +252,17 @@ jobs:
             $PLATFORM_CONFIGURE_FLAGS
           make
           # Show that these are not dynamic executables.  Fail if they are.
-          ldd ffmpeg && exit 1
-          ldd ffprobe && exit 1
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            ldd ffmpeg && exit 1
+            ldd ffprobe && exit 1
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            # TODO: Verify the usage of otool for macOS.
+            otool -L ffmpeg && exit 1
+            otool -L ffprobe && exit 1
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            ldd ffmpeg.exe && exit 1
+            ldd ffprobe.exe && exit 1
+          fi
           # After commands that we expect to fail, we still need a successful
           # command here to make this step a success.
           true
