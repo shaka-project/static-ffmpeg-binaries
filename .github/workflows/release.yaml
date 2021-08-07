@@ -46,8 +46,7 @@ jobs:
         # TODO: Add linux-arm64
         # TODO: Add Mac arm64?
         # TODO: Add Windows arm64?
-        #os: ["ubuntu-latest", "macos-latest", "windows-latest", "linux-arm64"]
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest", "linux-arm64"]
         include:
           - os: ubuntu-latest
             os_name: linux
@@ -61,6 +60,10 @@ jobs:
             os_name: win
             target_arch: x64
             exe_ext: ".exe"
+          - os: linux-arm64
+            os_name: linux
+            target_arch: arm64
+            exe_ext: ""
 
     name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
     runs-on: ${{ matrix.os }}
@@ -109,6 +112,14 @@ jobs:
             yasm
           # Don't use sudo in install commands on Windows.
           echo "SUDO=" >> $GITHUB_ENV
+          # FIXME: Debugging
+          # In the libvpx build, make doesn't seem to work.  If I SSH into the
+          # VM, make does work.  So am I getting a different make?  How is the
+          # build environment different from the shell I get when I ssh in?
+          echo "PATH=$PATH"
+          which make
+          PATH="/usr/bin:$PATH" which make
+          echo "/usr/bin" >> $GITHUB_PATH
 
       - name: Install libvpx
         shell: bash
