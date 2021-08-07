@@ -80,7 +80,6 @@ jobs:
           set -x
           brew install \
             mercurial \
-            nasm \
             yasm
 
       - name: Debug
