@@ -211,7 +211,7 @@ jobs:
             # others are not having this problem with ffmpeg.
             # TODO: Try building from master branch to see if this has been
             # resolved more recently than n4.4.
-            PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm
+            PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm"
           fi
           ./configure \
             --pkg-config-flags="--static" \
