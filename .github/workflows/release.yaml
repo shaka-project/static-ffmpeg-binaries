@@ -98,10 +98,14 @@ jobs:
           set -x
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
+          # NOTE: disabling unit tests and examples significantly reduces build
+          # time (by 80% as tested on a Jetson Nano)
           ./configure \
             --enable-vp8 \
             --enable-vp9 \
             --enable-runtime-cpu-detect \
+            --disable-unit-tests \
+            --disable-examples \
             --enable-static \
             --disable-shared
           make
