@@ -246,6 +246,7 @@ jobs:
           ./configure \
             --pkg-config-flags="--static" \
             --disable-ffplay \
+            --enable-version3 \
             --enable-libvpx \
             --enable-libaom \
             --enable-libx264 \
