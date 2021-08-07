@@ -87,6 +87,7 @@ jobs:
           set -e
           set -x
           brew install \
+            md5sha1sum \
             mercurial \
             nasm \
             yasm
