@@ -64,6 +64,7 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          set -e
           set -x
           sudo apt -y install \
             nasm \
@@ -75,6 +76,7 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
+          set -e
           set -x
           brew install \
             mercurial \
@@ -91,12 +93,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
+          set -e
           set -x
           true  # FIXME: install prereqs & tools on Windows
 
       - name: Install libvpx
         shell: bash
         run: |
+          set -e
           set -x
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
@@ -118,6 +122,7 @@ jobs:
       - name: Install aom
         shell: bash
         run: |
+          set -e
           set -x
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
@@ -142,6 +147,7 @@ jobs:
       - name: Install x264
         shell: bash
         run: |
+          set -e
           set -x
           git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
           cd x264
@@ -159,6 +165,7 @@ jobs:
       - name: Install x265
         shell: bash
         run: |
+          set -e
           set -x
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
@@ -179,6 +186,7 @@ jobs:
       - name: Install lame
         shell: bash
         run: |
+          set -e
           set -x
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
           tar xzf lame-"$LAME_VERSION".tar.gz
@@ -198,6 +206,7 @@ jobs:
       - name: Install opus
         shell: bash
         run: |
+          set -e
           set -x
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
           tar xzf opus-"$OPUS_VERSION".tar.gz
@@ -220,6 +229,7 @@ jobs:
       - name: Build ffmpeg and ffprobe
         shell: bash
         run: |
+          set -e
           set -x
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
@@ -263,6 +273,7 @@ jobs:
       - name: Prepare assets
         shell: bash
         run: |
+          set -e
           set -x
           mkdir assets
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
@@ -313,6 +324,8 @@ jobs:
         id: md5sum
         shell: bash
         run: |
+          set -e
+          set -x
           cd assets
           SUMS=$(md5sum *)
           echo "::set-output name=sums::$SUMS"
