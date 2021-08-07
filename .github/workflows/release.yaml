@@ -228,7 +228,7 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: update_release("${{ needs.draft_release.outputs.release_id }}", { draft=False })
+          method: update_release("${{ needs.draft_release.outputs.release_id }}", { "draft": False })
 
       - name: Get all release assets
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
@@ -252,4 +252,4 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: update_release("${{ needs.draft_release.outputs.release_id }}", { body="${{ steps.md5sum.outputs.sums }}" })
+          method: update_release("${{ needs.draft_release.outputs.release_id }}", { "body": "${{ steps.md5sum.outputs.sums }}" })
