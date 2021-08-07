@@ -35,7 +35,7 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: draft_release("${{ github.ref }}")
+          method: 'draft_release("${{ github.ref }}")'
 
   build:
     needs: draft_release
@@ -207,7 +207,7 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
+          method: 'upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
 
   publish_release:
     name: Publish release
@@ -228,14 +228,14 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: update_release("${{ needs.draft_release.outputs.release_id }}", { "draft": False })
+          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", { "draft": False })'
 
       - name: Get all release assets
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: download_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")
+          method: 'download_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
 
       - name: Calculate MD5 sums of all release assets
         id: md5sum
@@ -252,4 +252,4 @@ jobs:
         with:
           username: shaka-bot
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: update_release("${{ needs.draft_release.outputs.release_id }}", { "body": "${{ steps.md5sum.outputs.sums }}" })
+          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", { "body": "${{ steps.md5sum.outputs.sums }}" })'
