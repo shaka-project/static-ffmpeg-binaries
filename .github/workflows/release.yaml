@@ -108,7 +108,6 @@ jobs:
             --enable-vp8 \
             --enable-vp9 \
             --enable-runtime-cpu-detect \
-            --disable-unit-tests \
             --enable-static \
             --disable-shared
           make
@@ -128,9 +127,7 @@ jobs:
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
           cd aom_build
-          # NOTE: AOM_TEST_TEST_CMAKE_ is meant to disable the building of tests
           cmake ../aom \
-            -DAOM_TEST_TEST_CMAKE_=1 \
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
