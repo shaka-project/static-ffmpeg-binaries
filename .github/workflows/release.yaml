@@ -80,6 +80,7 @@ jobs:
           set -x
           brew install \
             mercurial \
+            nasm \
             yasm
 
       - name: Debug
@@ -107,6 +108,7 @@ jobs:
             --enable-vp8 \
             --enable-vp9 \
             --enable-runtime-cpu-detect \
+            --disable-unit-tests \
             --enable-static \
             --disable-shared
           make
@@ -126,7 +128,9 @@ jobs:
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
           cd aom_build
+          # NOTE: AOM_TEST_TEST_CMAKE_ is meant to disable the building of tests
           cmake ../aom \
+            -DAOM_TEST_TEST_CMAKE_=1 \
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
@@ -241,6 +245,9 @@ jobs:
             # You can't do a _truly_ static build on macOS except the kernel.
             # So don't set LDFLAGS.  See https://stackoverflow.com/a/3801032
             PLATFORM_CONFIGURE_FLAGS="--enable-videotoolbox"
+            # Building with nasm seems to fail, so uninstall it and make ffmpeg
+            # use yasm instead.  We needed nasm before to build x264, though.
+            brew uninstall nasm
           fi
           ./configure \
             --pkg-config-flags="--static" \
