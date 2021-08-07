@@ -76,6 +76,12 @@ jobs:
             nasm \
             yasm
 
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
+
       - name: Install Windows packages
         if: runner.os == 'Windows'
         shell: bash
@@ -98,6 +104,12 @@ jobs:
           make
           sudo make install
 
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
+
       - name: Install aom
         shell: bash
         run: |
@@ -116,6 +128,12 @@ jobs:
           make
           sudo make install
 
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
+
       - name: Install x264
         shell: bash
         run: |
@@ -126,6 +144,12 @@ jobs:
             --enable-static
           make
           sudo make install
+
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
 
       - name: Install x265
         shell: bash
@@ -141,6 +165,12 @@ jobs:
           # found (or needed), and -lpthread missing)
           sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i /usr/local/lib/pkgconfig/x265.pc
 
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
+
       - name: Install lame
         shell: bash
         run: |
@@ -153,6 +183,12 @@ jobs:
             --disable-shared
           make
           sudo make install
+
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
 
       - name: Install opus
         shell: bash
@@ -169,6 +205,12 @@ jobs:
           # The pkgconfig linker flags for static opus don't work when ffmpeg
           # checks for opus in configure.  Linking libm after libopus fixes it.
           sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
+
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
 
       - name: Build ffmpeg and ffprobe
         shell: bash
@@ -199,6 +241,12 @@ jobs:
           # After commands that we expect to fail, we still need a successful
           # command here to make this step a success.
           true
+
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+        if: failure()
 
       - name: Prepare assets
         shell: bash
