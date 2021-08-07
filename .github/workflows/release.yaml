@@ -85,7 +85,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
@@ -113,7 +113,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install aom
         shell: bash
@@ -137,7 +137,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install x264
         shell: bash
@@ -154,7 +154,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install x265
         shell: bash
@@ -174,7 +174,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install lame
         shell: bash
@@ -193,7 +193,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Install opus
         shell: bash
@@ -215,7 +215,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Build ffmpeg and ffprobe
         shell: bash
@@ -257,7 +257,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
-        if: failure()
+        if: 0 && failure()
 
       - name: Prepare assets
         shell: bash
