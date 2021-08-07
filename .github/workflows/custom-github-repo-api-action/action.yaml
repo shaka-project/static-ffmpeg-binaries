@@ -80,11 +80,11 @@ runs:
 
         def draft_release(tag_name):
           # Turns "refs/tags/foo" into "foo"
-          name = tag_name.split("/").pop()
+          tag_name = tag_name.split("/").pop()
 
           data = {
             "tag_name": tag_name,
-            "name": name,
+            "name": tag_name,
             "draft": True,
           }
           body = call_api("/releases", data)
