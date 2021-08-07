@@ -100,7 +100,9 @@ jobs:
           set -e
           set -x
           # TODO: Discover all the missing packages on Windows, flesh this out
+          # NOTE: yasm does not have checksums in the choco package.
           choco install \
+            --allow-empty-checksums \
             nasm \
             yasm
           # Don't use sudo in install commands on Windows.
