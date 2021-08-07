@@ -241,7 +241,7 @@ jobs:
             export CFLAGS="-static"
             # You can't do a _truly_ static build on macOS except the kernel.
             # So don't set LDFLAGS.  See https://stackoverflow.com/a/3801032
-            PLATFORM_CONFIGURE_FLAGS=""
+            PLATFORM_CONFIGURE_FLAGS="--enable-videotoolbox"
           fi
           ./configure \
             --pkg-config-flags="--static" \
