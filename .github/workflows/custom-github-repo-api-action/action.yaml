@@ -118,6 +118,7 @@ runs:
           for asset in asset_list:
             name = asset["name"]
             url = asset["browser_download_url"]
+            print("Downloading: ", url)
             with urllib.request.urlopen(url) as download:
               with open(os.path.join(output_path, name), "wb") as local_file:
                 local_file.write(download.read())
