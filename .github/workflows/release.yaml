@@ -168,7 +168,7 @@ jobs:
           # This adjustment to the x265 linker flags is needed, at least on
           # arm, to successfully link against it statically.  (-lgcc_s not
           # found (or needed), and -lpthread missing)
-          sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i /usr/local/lib/pkgconfig/x265.pc
+          sudo sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i.bk /usr/local/lib/pkgconfig/x265.pc
 
       - name: Debug
         uses: mxschmitt/action-tmate@v3
@@ -209,7 +209,7 @@ jobs:
           sudo make install
           # The pkgconfig linker flags for static opus don't work when ffmpeg
           # checks for opus in configure.  Linking libm after libopus fixes it.
-          sudo sed -e 's/-lopus/-lopus -lm/' -i /usr/local/lib/pkgconfig/opus.pc
+          sudo sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
 
       - name: Debug
         uses: mxschmitt/action-tmate@v3
