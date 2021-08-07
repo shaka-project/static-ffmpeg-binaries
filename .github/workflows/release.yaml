@@ -266,7 +266,7 @@ jobs:
           mkdir assets
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
           cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
-          cp ffmpeg/ffprobe assets/ffprobe-"$SUFFIX"
+          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
           # Show MD5 sums that can be verified by users later if they want to
           # check for authenticity.
           cd assets
