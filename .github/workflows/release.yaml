@@ -104,17 +104,17 @@ jobs:
           set -x
           # TODO: Discover all the missing packages on Windows, flesh this out
           # NOTE: yasm does not have checksums in the choco package.
-          # NOTE: msys2 gives us a working version of gnu make.  The version
-          # already installed (choco package "make") somehow fails to build the
-          # libraries below.
-          # TODO: Verify my suspicions about msys2 and make.
           choco install \
             --allow-empty-checksums \
-            msys2 \
             nasm \
             yasm
           # Don't use sudo in install commands on Windows.
           echo "SUDO=" >> $GITHUB_ENV
+          # NOTE: msys2 gives us a working version of gnu make.  The version
+          # already installed (choco package "make") somehow fails to build the
+          # libraries below.
+          # TODO: Verify my suspicions about msys2 and make.
+          pacman -S mingw-w64-x86_64-make
           # FIXME: Debugging
           # In the libvpx build, make doesn't seem to work.  If I SSH into the
           # VM, make does work.  So am I getting a different make?  How is the
