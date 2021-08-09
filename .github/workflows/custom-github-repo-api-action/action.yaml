@@ -25,7 +25,7 @@ runs:
   steps:
     - name: Call Repo API
       id: call-repo-api
-      shell: python
+      shell: python3
       run: |
         import base64
         import json
