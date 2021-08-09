@@ -121,7 +121,7 @@ jobs:
             cmake
             git
             mercurial
-            mingw-w64-gcc
+            mingw-w64-x86_64-gcc
             nasm
             yasm
 
