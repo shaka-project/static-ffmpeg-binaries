@@ -121,7 +121,7 @@ jobs:
           echo "SUDO=" >> $GITHUB_ENV
 
       - name: Install libvpx
-        shell: bash
+        shell: msys2 {0}
         run: |
           set -e
           set -x
