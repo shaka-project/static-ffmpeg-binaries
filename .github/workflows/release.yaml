@@ -118,8 +118,10 @@ jobs:
           update: true
           install: >-
             base-devel
+            cmake
             gcc
             git
+            mercurial
             nasm
             yasm
 
