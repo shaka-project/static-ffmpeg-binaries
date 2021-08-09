@@ -69,6 +69,10 @@ jobs:
     name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
     runs-on: ${{ matrix.os }}
 
+    defaults:
+      run:
+        shell: msys2 {0}
+
     steps:
       - name: Install Linux packages
         if: runner.os == 'Linux'
@@ -86,6 +90,9 @@ jobs:
             libvdpau-dev
           # Use sudo in install commands on Linux.
           echo "SUDO=sudo" >> $GITHUB_ENV
+          # Create a symlink to msys2 so that we can use that as the default
+          # shell for all platforms.
+          ln -s /bin/bash /bin/msys2
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
@@ -100,28 +107,22 @@ jobs:
             yasm
           # Use sudo in install commands on macOS.
           echo "SUDO=sudo" >> $GITHUB_ENV
-
-      - name: Setup MSYS2
-        if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
+          # Create a symlink to msys2 so that we can use that as the default
+          # shell for all platforms.
+          ln -s /bin/bash /bin/msys2
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          set -e
-          set -x
-          # TODO: Discover all the missing packages on Windows, flesh this out
-          # NOTE: yasm does not have checksums in the choco package.
-          choco install \
-            --allow-empty-checksums \
-            nasm \
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            base-devel
+            git
+            nasm
             yasm
-          # Don't use sudo in install commands on Windows.
-          echo "SUDO=" >> $GITHUB_ENV
 
       - name: Install libvpx
-        shell: msys2 {0}
         run: |
           set -e
           set -x
@@ -141,7 +142,6 @@ jobs:
           $SUDO make install
 
       - name: Install aom
-        shell: bash
         run: |
           set -e
           set -x
@@ -163,7 +163,6 @@ jobs:
           $SUDO sed -e 's/-laom/-laom -lm/' -i.bk /usr/local/lib/pkgconfig/aom.pc
 
       - name: Install x264
-        shell: bash
         run: |
           set -e
           set -x
@@ -175,7 +174,6 @@ jobs:
           $SUDO make install
 
       - name: Install x265
-        shell: bash
         run: |
           set -e
           set -x
@@ -190,7 +188,6 @@ jobs:
           $SUDO sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i.bk /usr/local/lib/pkgconfig/x265.pc
 
       - name: Install lame
-        shell: bash
         run: |
           set -e
           set -x
@@ -204,7 +201,6 @@ jobs:
           $SUDO make install
 
       - name: Install opus
-        shell: bash
         run: |
           set -e
           set -x
@@ -221,7 +217,6 @@ jobs:
           $SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
 
       - name: Build ffmpeg and ffprobe
-        shell: bash
         run: |
           set -e
           set -x
@@ -287,7 +282,6 @@ jobs:
         if: failure()
 
       - name: Prepare assets
-        shell: bash
         run: |
           set -e
           set -x
@@ -301,7 +295,6 @@ jobs:
           md5sum *
 
       - name: Checkout repo
-        shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Attach assets to release
