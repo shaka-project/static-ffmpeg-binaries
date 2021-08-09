@@ -173,7 +173,7 @@ jobs:
           cd x264
           ./configure \
             --enable-static
-          make
+          make libx264.a
           $SUDO make install install-lib-static
 
       - name: Install x265
