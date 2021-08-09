@@ -80,6 +80,7 @@ jobs:
             cmake \
             mercurial \
             nasm \
+            pkg-config \
             yasm \
             libffmpeg-nvenc-dev \
             libvdpau-dev
