@@ -109,22 +109,18 @@ jobs:
             --allow-empty-checksums \
             nasm \
             yasm
+          # NOTE: msys2 gives us a working version of gnu make.  The version
+          # of "make" already in the PATH by default (choco package "make")
+          # somehow fails to build the libraries below.
+          # FIXME: Debugging
+          echo "PATH=$PATH"
+          echo "SHELL=$SHELL"
+          ls /c/msys64 || true
+          ls /c/tools/msys64 || true
+          find /c/ -iname 'make*.exe' -or -iname '*make.exe' || true
+          find /d/ -iname 'make*.exe' -or -iname '*make.exe' || true
           # Don't use sudo in install commands on Windows.
           echo "SUDO=" >> $GITHUB_ENV
-          # NOTE: msys2 gives us a working version of gnu make.  The version
-          # already installed (choco package "make") somehow fails to build the
-          # libraries below.
-          # TODO: Verify my suspicions about msys2 and make.
-          pacman -S mingw-w64-x86_64-make
-          # FIXME: Debugging
-          # In the libvpx build, make doesn't seem to work.  If I SSH into the
-          # VM, make does work.  So am I getting a different make?  How is the
-          # build environment different from the shell I get when I ssh in?
-          # It seems that action-tmate installs msys, so that may be the key.
-          # The working version is for msys, vs mingw.
-          echo "PATH=$PATH"
-          # Show all make options
-          which -a make
 
       - name: Install libvpx
         shell: bash
