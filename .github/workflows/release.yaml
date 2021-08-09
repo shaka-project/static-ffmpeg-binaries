@@ -115,14 +115,9 @@ jobs:
             yasm
           # NOTE: msys2 gives us a working version of gnu make.  The version
           # of "make" already in the PATH by default (choco package "make")
-          # somehow fails to build the libraries below.
-          # FIXME: Debugging
-          echo "PATH=$PATH"
-          echo "SHELL=$SHELL"
-          ls /c/msys64 || true
-          ls /c/tools/msys64 || true
-          find /c/ -iname 'make*.exe' -or -iname '*make.exe' || true
-          find /d/ -iname 'make*.exe' -or -iname '*make.exe' || true
+          # somehow fails to build the libraries below.  So add the msys
+          # version to the PATH.
+          echo "/c/msys64/usr/bin" >> $GITHUB_PATH
           # Don't use sudo in install commands on Windows.
           echo "SUDO=" >> $GITHUB_ENV
 
