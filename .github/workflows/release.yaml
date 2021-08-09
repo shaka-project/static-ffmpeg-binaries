@@ -119,9 +119,9 @@ jobs:
           install: >-
             base-devel
             cmake
-            gcc
             git
             mercurial
+            mingw-w64-gcc
             nasm
             yasm
 
