@@ -183,6 +183,7 @@ jobs:
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
           cmake ../source \
+            -DENABLE_SHARED=OFF \
             -DENABLE_CLI=OFF
           make
           $SUDO make install
