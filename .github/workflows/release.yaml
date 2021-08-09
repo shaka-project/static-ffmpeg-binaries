@@ -210,6 +210,9 @@ jobs:
           ./configure \
             --enable-static \
             --disable-shared
+          # Only build and install the library.  The frontend doesn't build on
+          # Windows, and we don't need it anyway.
+          cd libmp3lame
           make
           $SUDO make install
 
