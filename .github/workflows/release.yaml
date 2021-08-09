@@ -113,11 +113,17 @@ jobs:
             --allow-empty-checksums \
             nasm \
             yasm
-          # NOTE: msys2 gives us a working version of gnu make.  The version
-          # of "make" already in the PATH by default (choco package "make")
-          # somehow fails to build the libraries below.  So add the msys
-          # version to the PATH.
-          echo "/c/msys64/usr/bin" >> $GITHUB_PATH
+          # TODO: Debugging "make" failures again.  Running the msys make fails
+          # with a message about a mismatch in the cygwin DLL, so the bash
+          # shell must use a different DLL than msys does.
+          # So let's try this to diable "path conversions", which might make
+          # the default "make" work correctly.  No clue.
+          echo "MSYS_NO_PATHCONV=1" >> $GITHUB_ENV
+          # While we're at it, let's print the shell version, in case it has
+          # clues about the specific environment (is it git bash?), and let's
+          # also print the full windows path of that shell.
+          $SHELL --version
+          cygpath -w $SHELL
           # Don't use sudo in install commands on Windows.
           echo "SUDO=" >> $GITHUB_ENV
 
