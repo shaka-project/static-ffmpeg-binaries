@@ -279,8 +279,10 @@ jobs:
           # command here to make this step a success.
           true
 
+      # TODO: send PR for arm64 and unfork
+      # TODO: remove once the workflow is working correctly
       - name: Debug
-        uses: mxschmitt/action-tmate@v3
+        uses: joeyparrish/action-tmate@v4
         with:
           limit-access-to-actor: true
         if: failure()
