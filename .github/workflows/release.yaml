@@ -207,12 +207,12 @@ jobs:
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
           tar xzf lame-"$LAME_VERSION".tar.gz
           cd lame-"$LAME_VERSION"
-          ./configure \
-            --enable-static \
-            --disable-shared
           # Only build and install the library.  The frontend doesn't build on
           # Windows, and we don't need it anyway.
-          cd libmp3lame
+          ./configure \
+            --disable-frontend \
+            --enable-static \
+            --disable-shared
           make
           $SUDO make install
 
@@ -224,6 +224,7 @@ jobs:
           tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
           ./configure \
+            --disable-extra-programs \
             --enable-static \
             --disable-shared
           make
