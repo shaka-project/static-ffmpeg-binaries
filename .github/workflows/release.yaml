@@ -125,6 +125,17 @@ jobs:
             nasm
             yasm
 
+      - name: Symlink pkgconfig folder for Windows
+        if: runner.os == 'Windows'
+        run: |
+          set -e
+          set -x
+          # On Windows, pkgconfig files go to a different location.
+          # Make a symlink so that the individual installs below don't need to
+          # be adjusted.
+          mkdir -p /usr/local/lib
+          ln -s /mingw64/lib/pkgconfig /usr/local/lib/pkgconfig
+
       - name: Install libvpx
         run: |
           set -e
@@ -229,11 +240,6 @@ jobs:
             --disable-shared
           make
           $SUDO make install
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # On Windows, this one gets installed to a different location.
-            # Make a symlink.
-            ln -s /mingw64/lib/pkgconfig/opus.pc /usr/local/lib/pkgconfig/opus.pc
-          fi
           # The pkgconfig linker flags for static opus don't work when ffmpeg
           # checks for opus in configure.  Linking libm after libopus fixes it.
           $SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
