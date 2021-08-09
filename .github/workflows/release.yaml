@@ -76,6 +76,7 @@ jobs:
           set -x
           sudo apt -y install \
             cmake \
+            mercurial \
             nasm \
             yasm \
             libffmpeg-nvenc-dev \
