@@ -75,6 +75,7 @@ jobs:
           set -e
           set -x
           sudo apt -y install \
+            cmake \
             nasm \
             yasm \
             libffmpeg-nvenc-dev \
