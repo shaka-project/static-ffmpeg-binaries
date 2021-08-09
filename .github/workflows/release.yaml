@@ -135,6 +135,15 @@ jobs:
           # be adjusted.
           mkdir -p /usr/local/lib
           ln -s /mingw64/lib/pkgconfig /usr/local/lib/pkgconfig
+          # FIXME: Debugging msys/mingw environment
+          cygpath -w /
+          cygpath -w /mingw64
+          cygpath -w /usr/local/lib
+          cygpath -w /usr/local/lib/pkgconfig
+          ls -al /
+          ls -al /mingw64
+          ls -al /usr/local/lib
+          ls -al /usr/local/lib/pkgconfig
 
       - name: Install libvpx
         run: |
