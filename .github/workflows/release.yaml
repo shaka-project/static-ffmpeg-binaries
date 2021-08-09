@@ -118,6 +118,7 @@ jobs:
           update: true
           install: >-
             base-devel
+            gcc
             git
             nasm
             yasm
