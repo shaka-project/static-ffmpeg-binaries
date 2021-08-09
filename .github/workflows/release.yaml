@@ -174,7 +174,7 @@ jobs:
           ./configure \
             --enable-static
           make libx264.a
-          $SUDO make install install-lib-static
+          $SUDO make install-lib-static
 
       - name: Install x265
         run: |
@@ -182,7 +182,8 @@ jobs:
           set -x
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
-          cmake ../source
+          cmake ../source \
+            -DENABLE_CLI=OFF
           make
           $SUDO make install
           # This adjustment to the x265 linker flags is needed, at least on
