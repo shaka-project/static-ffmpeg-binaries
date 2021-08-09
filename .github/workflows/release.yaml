@@ -164,6 +164,9 @@ jobs:
             -DCONFIG_SHARED=0
           make
           $SUDO make install
+          # This adjustment to the aom linker flags is needed, at least on
+          # arm, to successfully link against it statically.  (-lm missing)
+          $SUDO sed -e 's/-laom/-laom -lm/' -i.bk /usr/local/lib/pkgconfig/aom.pc
 
       - name: Install x264
         shell: bash
