@@ -92,7 +92,7 @@ jobs:
           echo "SUDO=sudo" >> $GITHUB_ENV
           # Create a symlink to msys2 so that we can use that as the default
           # shell for all platforms.
-          ln -s /bin/bash /bin/msys2
+          sudo ln -s /bin/bash /bin/msys2
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
@@ -109,7 +109,7 @@ jobs:
           echo "SUDO=sudo" >> $GITHUB_ENV
           # Create a symlink to msys2 so that we can use that as the default
           # shell for all platforms.
-          ln -s /bin/bash /bin/msys2
+          sudo ln -s /bin/bash /bin/msys2
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
