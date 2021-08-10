@@ -112,16 +112,27 @@ jobs:
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            base-devel
-            cmake
-            git
-            mercurial
-            mingw-w64-x86_64-gcc
-            nasm
+        #uses: msys2/setup-msys2@v2
+        #with:
+        #  update: true
+        #  install: >-
+        #    base-devel
+        #    cmake
+        #    git
+        #    mercurial
+        #    mingw-w64-x86_64-gcc
+        #    nasm
+        #    yasm
+        run: |
+          set -e
+          set -x
+          pacman -Sy --noconfirm \
+            base-devel \
+            cmake \
+            git \
+            mercurial \
+            mingw-w64-x86_64-gcc \
+            nasm \
             yasm
 
       - name: Symlink pkgconfig folder for Windows
