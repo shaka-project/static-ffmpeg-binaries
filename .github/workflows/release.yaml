@@ -232,7 +232,10 @@ jobs:
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
           tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
+          # On Windows, somehow prefix defaults to / instead of /usr/local, but
+          # only on this one project.  No idea why.
           ./configure \
+            --prefix=/usr/local \
             --disable-extra-programs \
             --enable-static \
             --disable-shared
