@@ -70,7 +70,7 @@ jobs:
 
     defaults:
       run:
-        shell: msys2 {0}
+        shell: bash
 
     steps:
       - name: Install Linux packages
@@ -89,9 +89,6 @@ jobs:
             libvdpau-dev
           # Use sudo in install commands on Linux.
           echo "SUDO=sudo" >> $GITHUB_ENV
-          # Create a symlink to msys2 so that we can use that as the default
-          # shell for all platforms.
-          sudo ln -s /bin/bash /bin/msys2
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
@@ -106,26 +103,21 @@ jobs:
             yasm
           # Use sudo in install commands on macOS.
           echo "SUDO=sudo" >> $GITHUB_ENV
-          # Create a symlink to msys2 so that we can use that as the default
-          # shell for all platforms.
-          sudo ln -s /bin/bash /bin/msys2
+
+      - name: Add msys2 to the Windows path
+        if: runner.os == 'Windows'
+        run: |
+          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+          # TODO: Clean up this debug code
+          cygpath -w "$SHELL"
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
-        #uses: msys2/setup-msys2@v2
-        #with:
-        #  update: true
-        #  install: >-
-        #    base-devel
-        #    cmake
-        #    git
-        #    mercurial
-        #    mingw-w64-x86_64-gcc
-        #    nasm
-        #    yasm
         run: |
           set -e
           set -x
+          # TODO: Clean up this debug code
+          cygpath -w "$SHELL"
           pacman -Sy --noconfirm \
             base-devel \
             cmake \
