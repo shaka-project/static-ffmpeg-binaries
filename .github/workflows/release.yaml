@@ -329,7 +329,7 @@ jobs:
       # TODO: send PR for arm64 and unfork
       # TODO: remove once the workflow is working correctly
       - name: Debug
-        uses: joeyparrish/action-tmate@v4
+        uses: joeyparrish/action-tmate@v5
         with:
           limit-access-to-actor: true
         if: failure()
