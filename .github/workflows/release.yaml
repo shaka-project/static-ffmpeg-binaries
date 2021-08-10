@@ -237,9 +237,11 @@ jobs:
           cd opus-"$OPUS_VERSION"
           # On Windows, somehow prefix defaults to / instead of /usr/local, but
           # only on some projects.  No idea why.
+          # On Windows, we also need to disable-stack-protector.
           ./configure \
             --prefix=/usr/local \
             --disable-extra-programs \
+            --disable-stack-protector \
             --enable-static \
             --disable-shared
           make
