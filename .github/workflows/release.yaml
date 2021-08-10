@@ -275,6 +275,12 @@ jobs:
             # TODO: Try building from master branch to see if this has been
             # resolved more recently than n4.4.
             PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Convince ffmpeg that we want to build for mingw64 (native
+            # Windows), not msys.  Since we're in an msys environment, ffmpeg
+            # reasonably assumes we're building for that environment if we
+            # don't specify this.
+            PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
           fi
           ./configure \
             --pkg-config-flags="--static" \
