@@ -109,20 +109,27 @@ jobs:
         run: |
           # At this point, we're running Git Bash.  After this step, we will be
           # running msys bash, just as we would be in tmate.
-          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+          # Make sure we add them in this order, so that we get a functional
+          # cmake for aom and x265.  I don't know why/how we have one in each
+          # of these paths, but there it is.
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
+          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
         run: |
           set -e
           set -x
+          # FIXME: Debugging cmake issues
+          which -a cmake
           pacman -Sy --noconfirm \
             cmake \
             git \
             mercurial \
             nasm \
             yasm
+          # FIXME: Debugging cmake issues
+          which -a cmake
 
       - name: Symlink pkgconfig folder for Windows
         if: runner.os == 'Windows'
@@ -136,13 +143,9 @@ jobs:
           ln -s /mingw64/lib/pkgconfig /usr/local/lib/pkgconfig
           # FIXME: Debugging msys/mingw environment
           cygpath -w /
-          cygpath -w /mingw64
-          cygpath -w /usr/local/lib
-          cygpath -w /usr/local/lib/pkgconfig
-          ls -al /
-          ls -al /mingw64
-          ls -al /usr/local/lib
+          ls -al /mingw64/lib/pkgconfig
           ls -al /usr/local/lib/pkgconfig
+          ls -ld /usr/local/lib/pkgconfig
 
       - name: Install libvpx
         run: |
