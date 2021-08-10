@@ -107,24 +107,20 @@ jobs:
       - name: Add msys2 to the Windows path
         if: runner.os == 'Windows'
         run: |
+          # At this point, we're running Git Bash.  After this step, we will be
+          # running msys bash, just as we would be in tmate.
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
-          # TODO: Clean up this debug code
-          cygpath -w "$SHELL"
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
         run: |
           set -e
           set -x
-          # TODO: Clean up this debug code
-          cygpath -w "$SHELL"
           pacman -Sy --noconfirm \
-            base-devel \
             cmake \
             git \
             mercurial \
-            mingw-w64-x86_64-gcc \
             nasm \
             yasm
 
