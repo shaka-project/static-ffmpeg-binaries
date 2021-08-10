@@ -156,7 +156,7 @@ jobs:
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
           cmake ../aom \
-            -DCMAKE_INSTALL_PREFIX=/usr/local
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
@@ -190,7 +190,7 @@ jobs:
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
           cmake ../source \
-            -DCMAKE_INSTALL_PREFIX=/usr/local
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
             -DENABLE_SHARED=OFF \
             -DENABLE_CLI=OFF
           make
