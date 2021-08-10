@@ -192,16 +192,7 @@ jobs:
             -DENABLE_SHARED=OFF \
             -DENABLE_CLI=OFF
           make
-          # TODO: Re-evaluate this now that I have simplified the environment.
-          # For some reason, make install isn't working for this project on
-          # Windows.  I don't know whether to x265's build system or the crazy
-          # Actions Windows build environment.  Either way, these generic
-          # instructions work for all platforms.
-          $SUDO mkdir -p /usr/local/include
-          $SUDO mkdir -p /usr/local/lib/pkgconfig
-          $SUDO cp x265_config.h ../source/x265.h /usr/local/include/
-          $SUDO cp libx265.a /usr/local/lib/
-          $SUDO cp x265.pc /usr/local/lib/pkgconfig/
+          $SUDO make install
           # This adjustment to the x265 linker flags is needed, at least on
           # arm, to successfully link against it statically.  (-lgcc_s not
           # found (or needed), and -lpthread missing)
