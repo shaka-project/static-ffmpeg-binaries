@@ -118,7 +118,7 @@ jobs:
           pacman -Sy --noconfirm \
             git \
             mercurial \
-            mingw-w64-ca-certificates \
+            mingw-w64-x86_64-ca-certificates \
             nasm \
             yasm
           # Make sure that cmake builds makefiles and not ninja files.
