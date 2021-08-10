@@ -276,6 +276,9 @@ jobs:
             # resolved more recently than n4.4.
             PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Surprisingly, this is not in the mingw linker path by default.
+            export LDFLAGS="-L/usr/local/lib"
+
             # Convince ffmpeg that we want to build for mingw64 (native
             # Windows), not msys.  Since we're in an msys environment, ffmpeg
             # reasonably assumes we're building for that environment if we
