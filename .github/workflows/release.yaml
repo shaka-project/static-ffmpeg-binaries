@@ -111,12 +111,20 @@ jobs:
           # running msys bash, just as we would be in tmate.
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+          # TODO: Debug
+          which -a uname
+          cygpath -w $(which uname)
+          uname -s
 
       - name: Install Windows packages
         if: runner.os == 'Windows'
         run: |
           set -e
           set -x
+          # TODO: Debug
+          which -a uname
+          cygpath -w $(which uname)
+          uname -s
           pacman -Sy --noconfirm \
             git \
             mercurial \
@@ -126,6 +134,10 @@ jobs:
           echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+          # TODO: Debug
+          which -a uname
+          cygpath -w $(which uname)
+          uname -s
 
       - name: Install libvpx
         run: |
