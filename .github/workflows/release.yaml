@@ -88,7 +88,7 @@ jobs:
             libffmpeg-nvenc-dev \
             libvdpau-dev
           # Use sudo in install commands on Linux.
-          echo "SUDO=sudo" >> $GITHUB_ENV
+          echo "SUDO=sudo" >> "$GITHUB_ENV"
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
@@ -102,16 +102,13 @@ jobs:
             nasm \
             yasm
           # Use sudo in install commands on macOS.
-          echo "SUDO=sudo" >> $GITHUB_ENV
+          echo "SUDO=sudo" >> "$GITHUB_ENV"
 
       - name: Add msys2 to the Windows path
         if: runner.os == 'Windows'
         run: |
           # At this point, we're running Git Bash.  After this step, we will be
           # running msys bash, just as we would be in tmate.
-          # Make sure we add them in this order, so that we get a functional
-          # cmake for aom and x265.  I don't know why/how we have one in each
-          # of these paths, but there it is.
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
 
@@ -120,32 +117,15 @@ jobs:
         run: |
           set -e
           set -x
-          # FIXME: Debugging cmake issues
-          which -a cmake
           pacman -Sy --noconfirm \
-            cmake \
             git \
             mercurial \
             nasm \
             yasm
-          # FIXME: Debugging cmake issues
-          which -a cmake
-
-      - name: Symlink pkgconfig folder for Windows
-        if: runner.os == 'Windows'
-        run: |
-          set -e
-          set -x
-          # On Windows, pkgconfig files go to a different location.
-          # Make a symlink so that the individual installs below don't need to
-          # be adjusted.
-          mkdir -p /usr/local/lib
-          ln -s /mingw64/lib/pkgconfig /usr/local/lib/pkgconfig
-          # FIXME: Debugging msys/mingw environment
-          cygpath -w /
-          ls -al /mingw64/lib/pkgconfig
-          ls -al /usr/local/lib/pkgconfig
-          ls -ld /usr/local/lib/pkgconfig
+          # Make sure that cmake builds makefiles and not ninja files.
+          echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
+          # Make sure that pkg-config searches the expected path.
+          echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
 
       - name: Install libvpx
         run: |
@@ -173,7 +153,10 @@ jobs:
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
           mkdir aom_build
           cd aom_build
+          # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+          # to c:\Program Files.
           cmake ../aom \
+            -DCMAKE_INSTALL_PREFIX=/usr/local
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
@@ -204,10 +187,14 @@ jobs:
           set -x
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
+          # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+          # to c:\Program Files.
           cmake ../source \
+            -DCMAKE_INSTALL_PREFIX=/usr/local
             -DENABLE_SHARED=OFF \
             -DENABLE_CLI=OFF
           make
+          # TODO: Re-evaluate this now that I have simplified the environment.
           # For some reason, make install isn't working for this project on
           # Windows.  I don't know whether to x265's build system or the crazy
           # Actions Windows build environment.  Either way, these generic
