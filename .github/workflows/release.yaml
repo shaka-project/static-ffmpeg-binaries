@@ -37,6 +37,7 @@ jobs:
           set -e
           set -x
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          (cd repo-src/.github/workflows/api-client && npm install)
           tag="${{ github.ref }}"
           release_id=$(node ./repo-src/.github/workflows/api-client/main.js draft-release "$tag")
           echo "::set-output name=release_id::$release_id"
@@ -353,6 +354,7 @@ jobs:
           set -e
           set -x
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          (cd repo-src/.github/workflows/api-client && npm install)
           release_id="${{ needs.draft_release.outputs.release_id }}"
           node ./repo-src/.github/workflows/api-client/main.js \
             upload-all-assets "$release_id" assets/
@@ -376,6 +378,7 @@ jobs:
           set -e
           set -x
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          (cd repo-src/.github/workflows/api-client && npm install)
 
           # First, we have to take the release out of draft mode.  Until then,
           # we can't get download URLs for the assets.
