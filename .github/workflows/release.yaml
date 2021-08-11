@@ -26,7 +26,6 @@ jobs:
       release_id: ${{ steps.draft_release.outputs.release_id }}
     steps:
       - name: Checkout repo
-        shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Draft release
@@ -72,7 +71,6 @@ jobs:
     steps:
       - name: Install Linux packages
         if: runner.os == 'Linux'
-        shell: bash
         run: |
           set -e
           set -x
@@ -89,7 +87,6 @@ jobs:
 
       - name: Install macOS packages
         if: runner.os == 'macOS'
-        shell: bash
         run: |
           set -e
           set -x
@@ -121,18 +118,39 @@ jobs:
         run: |
           set -e
           set -x
-          which -a python3 # FIXME: Debug
           pacman -Sy --noconfirm \
             git \
             mercurial \
-            mingw-w64-x86_64-ca-certificates \
             nasm \
             yasm
-          which -a python3 # FIXME: Debug
           # Make sure that cmake builds makefiles and not ninja files.
           echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Debug python3 on Windows
+        shell: python3 {0}
+        run: |
+          import urllib.request
+          import sys
+          print("[DEBUG] Python executable", sys.executable)
+          try:
+            urllib.request.urlopen("https://api.github.com/repos/joeyparrish/static-ffmpeg-binaries/releases")
+            print("[DEBUG] urllib request OK")
+          except Exception as e:
+            print("[DEBUG] urllib request failed", e)
+
+      - name: Debug python3 on Windows, part 2
+        shell: bash -c python3 {0}
+        run: |
+          import urllib.request
+          import sys
+          print("[DEBUG] Python executable", sys.executable)
+          try:
+            urllib.request.urlopen("https://api.github.com/repos/joeyparrish/static-ffmpeg-binaries/releases")
+            print("[DEBUG] urllib request OK")
+          except Exception as e:
+            print("[DEBUG] urllib request failed", e)
 
       - name: Install libvpx
         run: |
@@ -374,7 +392,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        shell: bash
         run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       # First, we have to take the release out of draft mode.  Then, we can
@@ -395,7 +412,6 @@ jobs:
 
       - name: Calculate MD5 sums of all release assets
         id: md5sum
-        shell: bash
         run: |
           set -e
           set -x
