@@ -1,3 +1,18 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A workflow to build and release fresh binaries.
 name: Release
 
 # Runs when a new tag is created.  Creates a release for that tag, then builds
@@ -8,6 +23,8 @@ on:
     tags:
       - "*"
 
+# These are the versions of ffmpeg and its dependencies that we build from
+# source.
 env:
   FFMPEG_TAG: "n4.4"
   LIBVPX_TAG: "v1.9.0"
@@ -18,11 +35,18 @@ env:
   OPUS_VERSION: "1.3.1"
   VORBIS_VERSION: "1.3.7"
 
+# By default, run all commands in a bash shell.  On Windows, the default would
+# otherwise be powershell.  Each shell command should begin with "set -e" (to
+# make any failed command fail the script immediately) and "set -x" (to log
+# what commands are being run).
 defaults:
   run:
     shell: bash
 
 jobs:
+  # On a single Linux host, draft a release.  Later, different hosts will build
+  # for each OS/CPU in parallel, and then attach the resulting binaries to this
+  # draft.
   draft_release:
     name: Draft release
     runs-on: ubuntu-latest
@@ -36,19 +60,34 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
           (cd repo-src/.github/workflows/api-client && npm install)
+
+          # Create a draft release associated with the tag that triggered this
+          # workflow.
           tag="${{ github.ref }}"
           release_id=$(node ./repo-src/.github/workflows/api-client/main.js draft-release "$tag")
           echo "::set-output name=release_id::$release_id"
 
+  # On several different hosts, build ffmpeg's dependencies, then ffmpeg itself.
+  # The deps are all built as static libraries.
   build:
     needs: draft_release
     strategy:
       matrix:
         # TODO: Add Mac arm64?
         # TODO: Add Windows arm64?
+        # These are the OS images that we will run.  linux-arm64 is a
+        # self-hosted runner, as mid-2021, GitHub still does not offer arm64
+        # VMs.
         os: ["ubuntu-latest", "macos-latest", "windows-latest", "linux-arm64"]
+
+        # Associate additional properties with each of these OS options.
+        # Commenting out an OS above is not enough to remove one.  Its section
+        # here must also be commented out.
         include:
           - os: ubuntu-latest
             os_name: linux
@@ -76,6 +115,11 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Install missing packages on Linux.
+          # TODO: Some of these are already on GitHub's VMs, but not our
+          # self-hosted runner.  Try to make the self-hosted runner image more
+          # compatible with what GitHub offers by default.
           sudo apt -y install \
             cmake \
             mercurial \
@@ -85,6 +129,7 @@ jobs:
             yasm \
             libffmpeg-nvenc-dev \
             libvdpau-dev
+
           # Use sudo in install commands on Linux.
           echo "SUDO=sudo" >> "$GITHUB_ENV"
 
@@ -93,18 +138,24 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Use homebrew to install missing packages on mac.
           brew install \
             md5sha1sum \
             mercurial \
             nasm \
             yasm
+
           # Unlink homebrew packages that conflict with our static library
-          # builds below.
+          # builds below.  They are still installed, but will no longer be
+          # symlinked into default library paths, and the ffmpeg build will not
+          # pick up shared libraries we don't want.
           brew unlink \
             lame \
             opus \
             opusfile \
             xz
+
           # Use sudo in install commands on macOS.
           echo "SUDO=sudo" >> "$GITHUB_ENV"
 
@@ -112,7 +163,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           # At this point, we're running Git Bash.  After this step, we will be
-          # running msys bash, just as we would be in tmate.
+          # running msys bash, just as we would be when debugging via SSH with
+          # mxschmitt/action-tmate.
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
 
@@ -121,13 +173,17 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Install msys packages we will need.
           pacman -Sy --noconfirm \
             git \
             mercurial \
             nasm \
             yasm
+
           # Make sure that cmake builds makefiles and not ninja files.
           echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
+
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
 
@@ -135,8 +191,10 @@ jobs:
         run: |
           set -e
           set -x
+
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
+
           # NOTE: disabling unit tests and examples significantly reduces build
           # time (by 80% as tested on a Jetson Nano)
           ./configure \
@@ -147,6 +205,7 @@ jobs:
             --disable-examples \
             --enable-static \
             --disable-shared
+
           make
           $SUDO make install
 
@@ -154,9 +213,13 @@ jobs:
         run: |
           set -e
           set -x
+
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
+
+          # AOM insists on being built out-of-tree.
           mkdir aom_build
           cd aom_build
+
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
           cmake ../aom \
@@ -168,8 +231,10 @@ jobs:
             -DENABLE_TOOLS=OFF \
             -DCONFIG_RUNTIME_CPU_DETECT=1 \
             -DCONFIG_SHARED=0
+
           make
           $SUDO make install
+
           # This adjustment to the aom linker flags is needed, at least on
           # arm, to successfully link against it statically.  (-lm missing)
           $SUDO sed -e 's/-laom/-laom -lm/' -i.bk /usr/local/lib/pkgconfig/aom.pc
@@ -178,10 +243,14 @@ jobs:
         run: |
           set -e
           set -x
+
           git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
           cd x264
+
           ./configure \
             --enable-static
+
+          # Only build and install the static library.
           make libx264.a
           $SUDO make install-lib-static
 
@@ -189,16 +258,20 @@ jobs:
         run: |
           set -e
           set -x
+
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
+
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
           cmake ../source \
             -DCMAKE_INSTALL_PREFIX=/usr/local \
             -DENABLE_SHARED=OFF \
             -DENABLE_CLI=OFF
+
           make
           $SUDO make install
+
           # This adjustment to the x265 linker flags is needed, at least on
           # arm, to successfully link against it statically.  (-lgcc_s not
           # found (or needed), and -lpthread missing)
@@ -208,9 +281,11 @@ jobs:
         run: |
           set -e
           set -x
+
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
           tar xzf lame-"$LAME_VERSION".tar.gz
           cd lame-"$LAME_VERSION"
+
           # Only build and install the library (--disable-front-end).  The
           # frontend doesn't build on Windows, and we don't need it anyway.
           # On Windows, somehow prefix defaults to / instead of /usr/local, but
@@ -220,6 +295,7 @@ jobs:
             --disable-frontend \
             --enable-static \
             --disable-shared
+
           make
           $SUDO make install
 
@@ -227,13 +303,16 @@ jobs:
         run: |
           set -e
           set -x
+
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
           tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
+
           # On Windows, we can't link later if we build with -D_FORTIFY_SOURCE
           # now.  But there is no configure option for this, so we edit the
           # configure script instead.
           sed -e 's/-D_FORTIFY_SOURCE=2//' -i.bk configure
+
           # On Windows, somehow prefix defaults to / instead of /usr/local, but
           # only on some projects.  No idea why.
           # On Windows, we also need to disable-stack-protector.
@@ -243,8 +322,10 @@ jobs:
             --disable-stack-protector \
             --enable-static \
             --disable-shared
+
           make
           $SUDO make install
+
           # The pkgconfig linker flags for static opus don't work when ffmpeg
           # checks for opus in configure.  Linking libm after libopus fixes it.
           $SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
@@ -253,8 +334,11 @@ jobs:
         run: |
           set -e
           set -x
+
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
+
+          # Set some OS-specific environment variables and flags.
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             export CFLAGS="-static"
             export LDFLAGS="-static"
@@ -288,6 +372,7 @@ jobs:
             # don't specify this.
             PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
           fi
+
           ./configure \
             --pkg-config-flags="--static" \
             --disable-ffplay \
@@ -302,13 +387,17 @@ jobs:
             --enable-version3 \
             --enable-static \
             $PLATFORM_CONFIGURE_FLAGS
+
           make
+          # No "make install" for ffmpeg.
 
       - name: Check that executables are static
         run: |
           set -e
           set -x
+
           cd ffmpeg
+
           if [[ "${{ runner.os }}" == "Linux" ]]; then
             # If ldd succeeds, then these are dynamic executables, so we fail
             # this step if ldd succeeds.
@@ -329,18 +418,23 @@ jobs:
             otool -L ffmpeg | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
             otool -L ffprobe | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
           fi
-          # After commands that we expect to fail, we still need a successful
-          # command here to make this step a success.
+
+          # After commands that we expect to fail (greps and ldd commands
+          # above), we still need a successful command at the end of the script
+          # to make this step of the workflow a success.
           true
 
       - name: Prepare assets
         run: |
           set -e
           set -x
+
           mkdir assets
+
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
           cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
           cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
+
           # Show sizes and MD5 sums that can be verified by users later if they
           # want to check for authenticity.
           cd assets
@@ -353,8 +447,16 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
           (cd repo-src/.github/workflows/api-client && npm install)
+
+          # Attach the build outputs to the draft release.  Each machine will
+          # do this separately and in parallel.  Later, another job will take
+          # over to collect them all and use their MD5 sums to create the
+          # release notes (the "body" of the release).
           release_id="${{ needs.draft_release.outputs.release_id }}"
           node ./repo-src/.github/workflows/api-client/main.js \
             upload-all-assets "$release_id" assets/
@@ -377,6 +479,9 @@ jobs:
         run: |
           set -e
           set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
           (cd repo-src/.github/workflows/api-client && npm install)
 
@@ -391,7 +496,8 @@ jobs:
             download-all-assets "$release_id" assets/
           sums=$(md5sum *)
 
-          # Finally, update the release body with the MD5 sums.
+          # Finally, update the release notes (the "body" of the release) with
+          # the MD5 sums.
           body=$(echo -e "MD5 sums:\n$sums")
           node ./repo-src/.github/workflows/api-client/main.js \
             update-release-body "$release_id" "$body"
