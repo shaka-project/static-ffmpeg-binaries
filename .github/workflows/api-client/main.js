@@ -182,7 +182,17 @@ if (!okay) {
 
 // Run the command with the given arguments.
 (async () => {
-  const response = await command.method(...args);
+  let response;
+
+  try {
+    response = await command.method(...args);
+  } catch (error) {
+    console.error('Command failed!');
+    console.error('');
+    console.error(error);
+    process.exit(1);
+  }
+
   // If there's a return value, print it.
   if (response) {
     console.log(response);
