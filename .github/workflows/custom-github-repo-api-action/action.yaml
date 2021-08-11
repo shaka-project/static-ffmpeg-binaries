@@ -127,4 +127,5 @@ runs:
           path = "/releases/{}".format(release_id)
           call_api(path, data, method="PATCH")
 
+        print("[DEBUG] python executable: ", sys.executable) # FIXME: Debug
         ${{ inputs.method }}

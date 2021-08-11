@@ -121,12 +121,14 @@ jobs:
         run: |
           set -e
           set -x
+          which -a python3 # FIXME: Debug
           pacman -Sy --noconfirm \
             git \
             mercurial \
             mingw-w64-x86_64-ca-certificates \
             nasm \
             yasm
+          which -a python3 # FIXME: Debug
           # Make sure that cmake builds makefiles and not ninja files.
           echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
           # Make sure that pkg-config searches the expected path.
