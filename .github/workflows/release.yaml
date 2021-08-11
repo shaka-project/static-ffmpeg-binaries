@@ -41,7 +41,6 @@ jobs:
     needs: draft_release
     strategy:
       matrix:
-        # TODO: Finish Mac
         # TODO: Add Mac arm64?
         # TODO: Add Windows arm64?
         os: ["ubuntu-latest", "macos-latest", "windows-latest", "linux-arm64"]
@@ -324,21 +323,16 @@ jobs:
             ldd ffmpeg.exe | grep -qvi /c/Windows/ && exit 1
             ldd ffprobe.exe | grep -qvi /c/Windows/ && exit 1
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            # TODO: Verify the usage of otool for macOS.
-            otool -L ffmpeg && exit 1
-            otool -L ffprobe && exit 1
+            # These will still be dynamic executables, but they should not link
+            # against anything outside of /usr/lib or /System/Library.  The
+            # grep command will succeed if it can find anything outside
+            # these two folders, and then we fail if that succeeds.
+            otool -L ffmpeg | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
+            otool -L ffprobe | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
           fi
           # After commands that we expect to fail, we still need a successful
           # command here to make this step a success.
           true
-
-      # TODO: send PR for arm64 and unfork
-      # TODO: remove once the workflow is working correctly
-      - name: Debug
-        uses: joeyparrish/action-tmate@v5
-        with:
-          limit-access-to-actor: true
-        if: failure()
 
       - name: Prepare assets
         run: |
@@ -364,6 +358,7 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: 'upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
 
+      # TODO: unfork with arm64 PR lands
       # TODO: remove once we fix CA certs on Windows
       - name: Debug
         uses: joeyparrish/action-tmate@v5
