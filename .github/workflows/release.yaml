@@ -141,16 +141,16 @@ jobs:
             print("[DEBUG] urllib request failed", e)
 
       - name: Debug python3 on Windows, part 2
-        shell: bash -c python3 {0}
+        shell: bash
         run: |
-          import urllib.request
+          python3 -c 'import urllib.request
           import sys
           print("[DEBUG] Python executable", sys.executable)
           try:
             urllib.request.urlopen("https://api.github.com/repos/joeyparrish/static-ffmpeg-binaries/releases")
             print("[DEBUG] urllib request OK")
           except Exception as e:
-            print("[DEBUG] urllib request failed", e)
+            print("[DEBUG] urllib request failed", e)'
 
       - name: Install libvpx
         run: |
