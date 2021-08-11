@@ -29,16 +29,17 @@ jobs:
     outputs:
       release_id: ${{ steps.draft_release.outputs.release_id }}
     steps:
-      - name: Checkout repo
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-
       - name: Draft release
         id: draft_release
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'draft_release("${{ github.ref }}")'
+        env:
+          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+        run: |
+          set -e
+          set -x
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          tag="${{ github.ref }}"
+          release_id=$(node ./repo-src/.github/workflows/api-client/main.js draft-release "$tag")
+          echo "::set-output name=release_id::$release_id"
 
   build:
     needs: draft_release
@@ -345,15 +346,16 @@ jobs:
           wc -c *
           md5sum *
 
-      - name: Checkout repo
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-
       - name: Attach assets to release
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
+        env:
+          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+        run: |
+          set -e
+          set -x
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          release_id="${{ needs.draft_release.outputs.release_id }}"
+          node ./repo-src/.github/workflows/api-client/main.js \
+            upload-all-assets "$release_id" assets/
 
       # TODO: remove once we are done debugging
       - name: Debug
@@ -367,39 +369,26 @@ jobs:
     needs: [draft_release, build]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-
-      # First, we have to take the release out of draft mode.  Then, we can
-      # download the assets and use their MD5 sums to update the release notes.
       - name: Publish release
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", draft=False)'
-
-      - name: Get all release assets
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'download_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
-
-      - name: Calculate MD5 sums of all release assets
-        id: md5sum
+        env:
+          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
         run: |
           set -e
           set -x
-          cd assets
-          SUMS=$(md5sum *)
-          echo "::set-output name=sums::$SUMS"
-          # The sums are now in an output variable that we can use in the next
-          # step to set the release body.
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
-      - name: Update release notes
-        uses: ./repo-src/.github/workflows/custom-github-repo-api-action
-        with:
-          username: shaka-bot
-          token: ${{ secrets.SHAKA_BOT_TOKEN }}
-          method: 'update_release("${{ needs.draft_release.outputs.release_id }}", body="MD5 sums:\n${{ steps.md5sum.outputs.sums }}")'
+          # First, we have to take the release out of draft mode.  Until then,
+          # we can't get download URLs for the assets.
+          release_id="${{ needs.draft_release.outputs.release_id }}"
+          node ./repo-src/.github/workflows/api-client/main.js \
+            publish-release "$release_id"
+
+          # Next, download the assets and compute their MD5 sums.
+          node ./repo-src/.github/workflows/api-client/main.js \
+            download-all-assets "$release_id" assets/
+          sums=$(md5sum *)
+
+          # Finally, update the release body with the MD5 sums.
+          body=$(echo -e "MD5 sums:\n$sums")
+          node ./repo-src/.github/workflows/api-client/main.js \
+            update-release-body "$release_id" "$body"
