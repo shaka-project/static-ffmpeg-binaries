@@ -461,12 +461,12 @@ jobs:
           node ./repo-src/.github/workflows/api-client/main.js \
             upload-all-assets "$release_id" assets/
 
-      # TODO: remove once we are done debugging
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3.6
-        with:
-          limit-access-to-actor: true
-        if: failure()
+      # NOTE: Uncomment this step to debug failures via SSH.
+      #- name: Debug
+      #  uses: mxschmitt/action-tmate@v3.6
+      #  with:
+      #    limit-access-to-actor: true
+      #  if: failure()
 
   publish_release:
     name: Publish release
