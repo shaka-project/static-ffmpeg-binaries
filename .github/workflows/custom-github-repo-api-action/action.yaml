@@ -32,6 +32,7 @@ runs:
         import mimetypes
         import os
         import urllib.request
+        import sys
 
         def call_api(path, data=None, headers=None, method=None, get_json=True,
                      upload=False):
