@@ -142,19 +142,19 @@ jobs:
 
       - name: Debug cert issues in nodejs, part 1
         run: |
-          $SUDO npm install -g @octokit/rest
+          npm install @octokit/action
 
       - name: Debug cert issues in nodejs, part 2
         shell: node {0}
         run: |
-          const { Octokit } = require('@octokit/rest');
+          const { Octokit } = require('@octokit/action');
           const octokit = new Octokit();
           (async () => {
-            const { data } = await octokit.rest.repos.listReleases({
+            const response = await octokit.request("GET /repos/{owner}/{repo}/releases", {
               owner: 'joeyparrish',
               repo: 'static-ffmpeg-binaries',
             });
-            console.log(data);
+            console.log(response);
           })();
 
       - name: Install libvpx
