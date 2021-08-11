@@ -16,6 +16,7 @@
 // the workflow.
 
 const fs = require('fs');
+const https = require('https');
 const path = require('path');
 
 // octokit is the official API client of GitHub.
@@ -28,6 +29,8 @@ const octokit = new Octokit({
 });
 
 const COMMAND_MAP = {};
+
+const MAX_REDIRECTS = 3;
 
 
 // Convert a camelCase name to kebab-case.
@@ -119,6 +122,30 @@ async function uploadAllAssets(releaseId, folderPath) {
 }
 registerCommand(uploadAllAssets);
 
+// A helper function that will fetch via HTTPS and follow redirects.
+function fetchViaHttps(url, outputStream, redirectCount=0) {
+  if (redirectCount > MAX_REDIRECTS) {
+    throw new Error('Too many redirects!');
+  }
+
+  return new Promise((resolve, reject) => {
+    const request = https.get(url, (response) => {
+      if (response.statusCode == 301 || response.statusCode == 302) {
+        // Handle HTTP redirects.
+        const newUrl = response.headers.location;
+
+        resolve(fetchViaHttps(newUrl, outputStream, redirectCount + 1));
+      } else if (response.statusCode == 200) {
+        response.pipe(outputStream);
+        outputStream.on('finish', resolve);
+      } else {
+        reject(new Error(`Bad HTTP status code: ${response.statusCode}`));
+      }
+    });
+    request.on('error', reject);
+  });
+}
+
 async function downloadAllAssets(releaseId, outputPath) {
   // If the output path does not exist, create it.
   try {
@@ -130,16 +157,12 @@ async function downloadAllAssets(releaseId, outputPath) {
   const apiPath = `/releases/${releaseId}/assets`;
   const assetList = await repoApiCall('GET', apiPath);
   for (const asset of assetList) {
+    const url = asset.browser_download_url;
     const assetPath = path.join(outputPath, asset.name);
-    const outputStream = fs.createWriteSteam(assetPath);
+    const outputStream = fs.createWriteStream(assetPath);
 
-    await new Promise((resolve, reject) => {
-      const request = https.request(asset.browser_download_url, (response) => {
-        response.pipe(outputStream);
-      });
-      outputStream.on('finish', resolve);
-      request.on('error', reject);
-    });
+    console.log(`Fetching ${url} to ${assetPath}`);
+    await fetchViaHttps(url, outputStream);
   }
 }
 registerCommand(downloadAllAssets);
