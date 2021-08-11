@@ -145,7 +145,7 @@ jobs:
           $SUDO npm install -g @octokit/rest
 
       - name: Debug cert issues in nodejs, part 2
-        shell: nodejs {0}
+        shell: node {0}
         run: |
           const { Octokit } = require('@octokit/rest');
           const octokit = new Octokit();
