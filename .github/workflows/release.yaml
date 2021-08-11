@@ -355,10 +355,9 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: 'upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
 
-      # TODO: unfork with arm64 PR lands
-      # TODO: remove once we fix CA certs on Windows
+      # TODO: remove once we are done debugging
       - name: Debug
-        uses: joeyparrish/action-tmate@v5
+        uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
         if: failure()
