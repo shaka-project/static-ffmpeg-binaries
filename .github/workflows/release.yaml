@@ -129,14 +129,6 @@ jobs:
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
 
-      - name: Debug cert issues in nodejs
-        run: |
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-          cd repo-src/.github/workflows/
-          npm install @octokit/action
-          node github-repo-api-client.js
-          false # FIXME: force failure
-
       - name: Install libvpx
         run: |
           set -e
@@ -353,8 +345,8 @@ jobs:
           wc -c *
           md5sum *
 
-      #- name: Checkout repo
-      #  run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+      - name: Checkout repo
+        run: git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
 
       - name: Attach assets to release
         uses: ./repo-src/.github/workflows/custom-github-repo-api-action
