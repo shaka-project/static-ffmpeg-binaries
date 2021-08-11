@@ -65,9 +65,18 @@ function registerCommand(method) {
 }
 
 // A helper function to make calls to the GitHub Repo API.
-async function repoApiCall(method, apiPath, data) {
+async function repoApiCall(method, apiPath, data, upload=false) {
   const url = `${method} /repos/${repo}${apiPath}`;
-  const response = await octokit.request(url, data);
+
+  // Clone the "data" passed in.
+  const options = Object.assign({}, data);
+
+  // If we're uploading, that goes to a different API endpoint.
+  if (upload) {
+    options.baseUrl = 'https://uploads.github.com';
+  }
+
+  const response = await octokit.request(url, options);
   return response.data;
 }
 
@@ -97,7 +106,7 @@ async function uploadAsset(releaseId, assetPath) {
       'content-length': data.length,
     },
     data,
-  });
+  }, /* upload= */ true);
 }
 // Not registered as an independent command.
 
