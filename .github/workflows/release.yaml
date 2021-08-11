@@ -99,6 +99,13 @@ jobs:
             mercurial \
             nasm \
             yasm
+          # Unlink homebrew packages that conflict with our static library
+          # builds below.
+          brew unlink \
+            lame \
+            opus \
+            opusfile \
+            xz
           # Use sudo in install commands on macOS.
           echo "SUDO=sudo" >> "$GITHUB_ENV"
 
