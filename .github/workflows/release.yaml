@@ -128,7 +128,7 @@ jobs:
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
 
-      - name: Debug python3 on Windows
+      - name: Debug cert issues in python
         shell: python3 {0}
         run: |
           import urllib.request
@@ -140,17 +140,22 @@ jobs:
           except Exception as e:
             print("[DEBUG] urllib request failed", e)
 
-      - name: Debug python3 on Windows, part 2
-        shell: bash
+      - name: Debug cert issues in nodejs, part 1
         run: |
-          python3 -c 'import urllib.request
-          import sys
-          print("[DEBUG] Python executable", sys.executable)
-          try:
-            urllib.request.urlopen("https://api.github.com/repos/joeyparrish/static-ffmpeg-binaries/releases")
-            print("[DEBUG] urllib request OK")
-          except Exception as e:
-            print("[DEBUG] urllib request failed", e)'
+          $SUDO npm install -g @octokit/rest
+
+      - name: Debug cert issues in nodejs, part 2
+        shell: nodejs {0}
+        run: |
+          const { Octokit } = require('@octokit/rest');
+          const octokit = new Octokit();
+          (async () => {
+            const { data } = await octokit.rest.repos.listReleases({
+              owner: 'joeyparrish',
+              repo: 'static-ffmpeg-binaries',
+            });
+            console.log(data);
+          })();
 
       - name: Install libvpx
         run: |
