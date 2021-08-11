@@ -364,6 +364,13 @@ jobs:
           token: ${{ secrets.SHAKA_BOT_TOKEN }}
           method: 'upload_all_assets("${{ needs.draft_release.outputs.release_id }}", "assets/")'
 
+      # TODO: remove once we fix CA certs on Windows
+      - name: Debug
+        uses: joeyparrish/action-tmate@v5
+        with:
+          limit-access-to-actor: true
+        if: failure()
+
   publish_release:
     name: Publish release
     needs: [draft_release, build]
