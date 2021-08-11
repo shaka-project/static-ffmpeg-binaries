@@ -78,6 +78,7 @@ jobs:
             cmake \
             mercurial \
             nasm \
+            npm \
             pkg-config \
             yasm \
             libffmpeg-nvenc-dev \
