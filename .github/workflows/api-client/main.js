@@ -17,6 +17,8 @@
 
 const fs = require('fs');
 const path = require('path');
+
+// octokit is the official API client of GitHub.
 const { Octokit } = require('@octokit/core');
 
 const repo = process.env['GITHUB_REPOSITORY'];
@@ -25,39 +27,50 @@ const octokit = new Octokit({
   auth: process.env['GITHUB_TOKEN'],
 });
 
-const command = process.argv[2];
-const args = process.argv.slice(3);
+const COMMAND_MAP = {};
 
 
-const COMMAND_MAP = {
-  'draft-release': draftRelease,
-  'upload-all-assets': uploadAllAssets,
-  'upload-asset': uploadAsset,
-  'download-all-assets': downloadAllAssets,
-  'publish-release': publishRelease,
-  'update-release-body': updateReleaseBody,
-};
+// Convert a camelCase name to kebab-case.
+function camelCaseToKebabCase(name) {
+  // Split the camelCase name into parts with a zero-length lookahead regex on
+  // any capital letter.  Something like "methodName" should be split into
+  // ["method", "Name"].
+  const nameParts = name.split(/(?=[A-Z])/);
 
-
-const method = COMMAND_MAP[command];
-if (!method) {
-  throw new Error(`Unknown command "${command}"`);
+  // Convert those parts into a kebab-case name.
+  return nameParts.map(part => part.toLowerCase()).join('-');
 }
 
-(async () => {
-  const response = await method(...args);
-  // If there's a return value, print it.
-  if (response) {
-    console.log(response);
-  }
-})();
+// Register a method that the user can invoke on the command-line.  We use
+// (cheap) introspection to find the argument names, so that we can
+// automatically document usage of each command without worrying about the docs
+// getting out of sync with the code.
+function registerCommand(method) {
+  const methodName = method.name;
+  const commandName = camelCaseToKebabCase(methodName);
 
+  // Hack out the arguments from the stringified function.  This is terrible
+  // and will not work in the general case of all JavaScript, but it does work
+  // here.  (Don't be like me.)
+  const firstLine = method.toString().split('\n')[0];
+  const argString = firstLine.split('(')[1].split(')')[0];
+  const camelArgs = argString.replace(/\s+/, '').split(',');
+  const args = camelArgs.map(camelCaseToKebabCase);
 
+  COMMAND_MAP[commandName] = {
+    commandName,
+    method,
+    args,
+  };
+}
+
+// A helper function to make calls to the GitHub Repo API.
 async function repoApiCall(method, apiPath, data) {
   const url = `${method} /repos/${repo}${apiPath}`;
   const response = await octokit.request(url, data);
   return response.data;
 }
+
 
 async function draftRelease(tagName) {
   // Turns "refs/tags/foo" into "foo".
@@ -71,6 +84,7 @@ async function draftRelease(tagName) {
 
   return response.id;
 }
+registerCommand(draftRelease);
 
 async function uploadAsset(releaseId, assetPath) {
   const baseName = path.basename(assetPath);
@@ -85,6 +99,7 @@ async function uploadAsset(releaseId, assetPath) {
     data,
   });
 }
+// Not registered as an independent command.
 
 async function uploadAllAssets(releaseId, folderPath) {
   const folderContents = await fs.promises.readdir(folderPath);
@@ -93,6 +108,7 @@ async function uploadAllAssets(releaseId, folderPath) {
     await uploadAsset(releaseId, assetPath);
   }
 }
+registerCommand(uploadAllAssets);
 
 async function downloadAllAssets(releaseId, outputPath) {
   // If the output path does not exist, create it.
@@ -117,11 +133,58 @@ async function downloadAllAssets(releaseId, outputPath) {
     });
   }
 }
+registerCommand(downloadAllAssets);
 
 async function publishRelease(releaseId) {
   await repoApiCall('PATCH', `/releases/${releaseId}`, { draft: false });
 }
+registerCommand(publishRelease);
 
 async function updateReleaseBody(releaseId, body) {
   await repoApiCall('PATCH', `/releases/${releaseId}`, { body });
 }
+registerCommand(updateReleaseBody);
+
+
+// We expect a command and arguments.
+const commandName = process.argv[2];
+const args = process.argv.slice(3);
+const command = COMMAND_MAP[commandName];
+let okay = true;
+
+if (!commandName) {
+  console.error('No command selected!');
+  okay = false;
+} else if (!command) {
+  console.error(`Unknown command: ${commandName}`);
+  okay = false;
+} else if (args.length != command.args.length) {
+  console.error(`Wrong number of arguments for command: ${commandName}`);
+  okay = false;
+}
+
+// If there is no command name, there will also be no command, so this usage
+// section applies to both conditions above.
+if (!okay) {
+  console.error('');
+  console.error('Usage:');
+  const thisScript = path.basename(process.argv[1]);
+
+  for (possibleCommand of Object.values(COMMAND_MAP)) {
+    console.error(
+        '  ',
+        thisScript,
+        possibleCommand.commandName,
+        ...possibleCommand.args.map(arg => `<${arg}>`));
+  }
+  process.exit(1);
+}
+
+// Run the command with the given arguments.
+(async () => {
+  const response = await command.method(...args);
+  // If there's a return value, print it.
+  if (response) {
+    console.log(response);
+  }
+})();
