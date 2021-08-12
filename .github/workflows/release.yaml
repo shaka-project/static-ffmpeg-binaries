@@ -112,7 +112,7 @@ jobs:
     steps:
       - name: Debug GitHub environment variables
         run: |
-          echo "{{ toJSON(env) }}"
+          echo "${{ toJSON(env) }}"
           exit 1
 
       - name: Install Linux packages
