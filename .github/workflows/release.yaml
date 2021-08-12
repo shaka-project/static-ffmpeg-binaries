@@ -23,17 +23,7 @@ on:
     tags:
       - "*"
 
-# These are the versions of ffmpeg and its dependencies that we build from
-# source.
-env:
-  FFMPEG_TAG: "n4.4"
-  LIBVPX_TAG: "v1.9.0"
-  AOM_TAG: "v3.1.2"
-  X264_TAG: "stable"
-  X265_TAG: "stable"
-  LAME_VERSION: "3.100"
-  OPUS_VERSION: "1.3.1"
-  VORBIS_VERSION: "1.3.7"
+# NOTE: The versions of the software we build are stored in versions.txt.
 
 # By default, run all commands in a bash shell.  On Windows, the default would
 # otherwise be powershell.  Each shell command should begin with "set -e" (to
@@ -56,14 +46,14 @@ jobs:
       - name: Draft release
         id: draft_release
         env:
-          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           set -x
 
           # Check out this repo and install node deps so that we can run the
           # API client.
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$GITHUB_REF"
           (cd repo-src/.github/workflows/api-client && npm install)
 
           # Create a draft release associated with the tag that triggered this
@@ -110,6 +100,16 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Check out repo source
+        run: |
+          set -e
+          set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$GITHUB_REF"
+          (cd repo-src/.github/workflows/api-client && npm install)
+
       - name: Install Linux packages
         if: runner.os == 'Linux'
         run: |
@@ -192,7 +192,8 @@ jobs:
           set -e
           set -x
 
-          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
+          tag=$(repo-src/.github/workflows/get-version.sh libvpx)
+          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$tag"
           cd libvpx
 
           # NOTE: disabling unit tests and examples significantly reduces build
@@ -214,7 +215,8 @@ jobs:
           set -e
           set -x
 
-          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
+          tag=$(repo-src/.github/workflows/get-version.sh aom)
+          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$tag"
 
           # AOM insists on being built out-of-tree.
           mkdir aom_build
@@ -244,7 +246,8 @@ jobs:
           set -e
           set -x
 
-          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
+          tag=$(repo-src/.github/workflows/get-version.sh x264)
+          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$tag"
           cd x264
 
           ./configure \
@@ -259,7 +262,8 @@ jobs:
           set -e
           set -x
 
-          hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
+          tag=$(repo-src/.github/workflows/get-version.sh x265)
+          hg clone http://hg.videolan.org/x265 -r "$tag"
           cd x265/build
 
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
@@ -282,9 +286,10 @@ jobs:
           set -e
           set -x
 
-          curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
-          tar xzf lame-"$LAME_VERSION".tar.gz
-          cd lame-"$LAME_VERSION"
+          version=$(repo-src/.github/workflows/get-version.sh lame)
+          curl -L -o lame-"$version".tar.gz https://sourceforge.net/projects/lame/files/lame/"$version"/lame-"$version".tar.gz/download
+          tar xzf lame-"$version".tar.gz
+          cd lame-"$version"
 
           # Only build and install the library (--disable-front-end).  The
           # frontend doesn't build on Windows, and we don't need it anyway.
@@ -304,9 +309,10 @@ jobs:
           set -e
           set -x
 
-          curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
-          tar xzf opus-"$OPUS_VERSION".tar.gz
-          cd opus-"$OPUS_VERSION"
+          version=$(repo-src/.github/workflows/get-version.sh opus)
+          curl -LO https://archive.mozilla.org/pub/opus/opus-"$version".tar.gz
+          tar xzf opus-"$version".tar.gz
+          cd opus-"$version"
 
           # On Windows, we can't link later if we build with -D_FORTIFY_SOURCE
           # now.  But there is no configure option for this, so we edit the
@@ -335,7 +341,8 @@ jobs:
           set -e
           set -x
 
-          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
+          tag=$(repo-src/.github/workflows/get-version.sh ffmpeg)
+          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$tag"
           cd ffmpeg
 
           # Set some OS-specific environment variables and flags.
@@ -442,15 +449,10 @@ jobs:
 
       - name: Attach assets to release
         env:
-          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           set -x
-
-          # Check out this repo and install node deps so that we can run the
-          # API client.
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
-          (cd repo-src/.github/workflows/api-client && npm install)
 
           # Attach the build outputs to the draft release.  Each machine will
           # do this separately and in parallel.  Later, another job will take
@@ -474,7 +476,7 @@ jobs:
     steps:
       - name: Publish release
         env:
-          GITHUB_TOKEN: ${{ secrets.SHAKA_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           set -x
@@ -484,8 +486,32 @@ jobs:
           git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
           (cd repo-src/.github/workflows/api-client && npm install)
 
-          # First, we have to take the release out of draft mode.  Until then,
-          # we can't get download URLs for the assets.
+          # Compile the release notes (the "body" of the release) with the date
+          # and the versions of the software we built.
+          > body.txt
+
+          echo "Date:" >> body.txt
+          echo "  $(date -u)" >> body.txt
+          echo "" >> body.txt
+
+          # Strip "refs/tags/foo" down to just "foo".
+          repo_tag=$(echo "${{ github.ref }}" | sed -e 's@.*/@@')
+          echo "$GITHUB_REPOSITORY version:" >> body.txt
+          echo "  $repo_tag" >> body.txt
+          echo "" >> body.txt
+
+          echo "Software versions:" >> body.txt
+          cat repo-src/.github/workflows/versions.txt | \
+            sed -e 's/^/  /' >> body.txt
+          echo "" >> body.txt
+
+          # Update the release notes with this preliminary version.  This is
+          # what gets emailed out when we publish the release below.
+          node ./repo-src/.github/workflows/api-client/main.js \
+            update-release-body "$release_id" "$(cat body.txt)"
+
+          # Now we have to take the release out of draft mode.  Until we do, we
+          # can't get download URLs for the assets.
           release_id="${{ needs.draft_release.outputs.release_id }}"
           node ./repo-src/.github/workflows/api-client/main.js \
             publish-release "$release_id"
@@ -494,25 +520,11 @@ jobs:
           node ./repo-src/.github/workflows/api-client/main.js \
             download-all-assets "$release_id" assets/
 
-          # Finally, update the release notes (the "body" of the release) with
-          # the versions of the software we built, plus MD5 sums of the
-          # resulting binaries.
-          > body.txt
-
-          echo "Date:" >> body.txt
-          echo "  $(date -u)" >> body.txt
-          echo "" >> body.txt
-
-          echo "$GITHUB_REPOSITORY version:" >> body.txt
-          echo "  ${{ github.ref }}" >> body.txt
-          echo "" >> body.txt
-
-          echo "Software versions:" >> body.txt
-          echo "${{ toJSON(env) }}" >> body.txt
-          echo "" >> body.txt
-
+          # Now add the MD5 sums to the release notes.
           echo "MD5 sums:" >> body.txt
           (cd assets; md5sum * | sed -e 's/^/  /') >> body.txt
 
+          # Now update the release notes one last time, with the MD5 sums
+          # appended.
           node ./repo-src/.github/workflows/api-client/main.js \
             update-release-body "$release_id" "$(cat body.txt)"
