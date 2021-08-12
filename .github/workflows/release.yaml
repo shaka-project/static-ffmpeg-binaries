@@ -509,12 +509,12 @@ jobs:
 
           # Update the release notes with this preliminary version.  This is
           # what gets emailed out when we publish the release below.
+          release_id="${{ needs.draft_release.outputs.release_id }}"
           node ./repo-src/.github/workflows/api-client/main.js \
             update-release-body "$release_id" "$(cat body.txt)"
 
           # Now we have to take the release out of draft mode.  Until we do, we
           # can't get download URLs for the assets.
-          release_id="${{ needs.draft_release.outputs.release_id }}"
           node ./repo-src/.github/workflows/api-client/main.js \
             publish-release "$release_id"
 
