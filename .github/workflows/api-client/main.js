@@ -173,9 +173,23 @@ async function publishRelease(releaseId) {
 registerCommand(publishRelease);
 
 async function updateReleaseBody(releaseId, body) {
-  await repoApiCall('PATCH', `/releases/${releaseId}`, { body });
+  // NOTE: If you update the release body without specifying tag_name, it gets
+  // reset, resulting in a new tag being created with an auto-generated name
+  // like "untagged-SHA1".  So we need to fetch the existing name before we
+  // update the body, and we need to specify it here.  This is not mentioned in
+  // GitHub's docs, and may be a bug on their end.
+  const release = await getRelease(releaseId);
+  await repoApiCall('PATCH', `/releases/${releaseId}`, {
+    body,
+    tag_name: release.tag_name,
+  });
 }
 registerCommand(updateReleaseBody);
+
+async function getRelease(releaseId) {
+  return await repoApiCall('GET', `/releases/${releaseId}`);
+}
+registerCommand(getRelease);
 
 
 // We expect a command and arguments.

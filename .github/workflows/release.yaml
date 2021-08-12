@@ -18,11 +18,10 @@ name: Release
 # Runs when a new tag is created.  Creates a release for that tag, then builds
 # ffmpeg and ffprobe on all OS & CPU combinations, then attaches them to the
 # release.
-# FIXME: re-enable this workflow
-#on:
-#  push:
-#    tags:
-#      - "*"
+on:
+  push:
+    tags:
+      - "*"
 
 # NOTE: The versions of the software we build are stored in versions.txt.
 
