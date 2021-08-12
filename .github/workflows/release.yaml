@@ -110,11 +110,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Debug GitHub environment variables
-        run: |
-          echo "${{ toJSON(env) }}"
-          exit 1
-
       - name: Install Linux packages
         if: runner.os == 'Linux'
         run: |
@@ -197,7 +192,6 @@ jobs:
           set -e
           set -x
 
-          echo "libvpx $LIBVPX_TAG" >> versions-built.txt
           git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$LIBVPX_TAG"
           cd libvpx
 
@@ -220,7 +214,6 @@ jobs:
           set -e
           set -x
 
-          echo "aom $AOM_TAG" >> versions-built.txt
           git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$AOM_TAG"
 
           # AOM insists on being built out-of-tree.
@@ -251,7 +244,6 @@ jobs:
           set -e
           set -x
 
-          echo "x264 $X264_TAG" >> versions-built.txt
           git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$X264_TAG"
           cd x264
 
@@ -267,7 +259,6 @@ jobs:
           set -e
           set -x
 
-          echo "x265 $X265_TAG" >> versions-built.txt
           hg clone http://hg.videolan.org/x265 -r "$X265_TAG"
           cd x265/build
 
@@ -291,7 +282,6 @@ jobs:
           set -e
           set -x
 
-          echo "lame $LAME_VERSION" >> versions-built.txt
           curl -L -o lame-"$LAME_VERSION".tar.gz https://sourceforge.net/projects/lame/files/lame/"$LAME_VERSION"/lame-"$LAME_VERSION".tar.gz/download
           tar xzf lame-"$LAME_VERSION".tar.gz
           cd lame-"$LAME_VERSION"
@@ -314,7 +304,6 @@ jobs:
           set -e
           set -x
 
-          echo "opus $OPUS_VERSION" >> versions-built.txt
           curl -LO https://archive.mozilla.org/pub/opus/opus-"$OPUS_VERSION".tar.gz
           tar xzf opus-"$OPUS_VERSION".tar.gz
           cd opus-"$OPUS_VERSION"
@@ -346,7 +335,6 @@ jobs:
           set -e
           set -x
 
-          echo "ffmpeg $FFMPEG_TAG" >> versions-built.txt
           git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$FFMPEG_TAG"
           cd ffmpeg
 
@@ -442,12 +430,9 @@ jobs:
           set -x
 
           mkdir assets
-          echo "$GITHUB_REPOSITORY {{ $github.ref }}" >> versions-built.txt
-
           SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
           cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
           cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
-          cp versions-built.txt assets/
 
           # Show sizes and MD5 sums that can be verified by users later if they
           # want to check for authenticity.
@@ -476,11 +461,11 @@ jobs:
             upload-all-assets "$release_id" assets/
 
       # NOTE: Uncomment this step to debug failures via SSH.
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3.6
-        with:
-          limit-access-to-actor: true
-        if: failure()
+      #- name: Debug
+      #  uses: mxschmitt/action-tmate@v3.6
+      #  with:
+      #    limit-access-to-actor: true
+      #  if: failure()
 
   publish_release:
     name: Publish release
@@ -512,14 +497,22 @@ jobs:
           # Finally, update the release notes (the "body" of the release) with
           # the versions of the software we built, plus MD5 sums of the
           # resulting binaries.
-          mv assets/versions-built.txt .
           > body.txt
-          echo "Date: $(date -u)" >> body.txt
+
+          echo "Date:" >> body.txt
+          echo "  $(date -u)" >> body.txt
           echo "" >> body.txt
-          echo "Versions built:" >> body.txt
-          cat versions-built.txt >> body.txt
+
+          echo "$GITHUB_REPOSITORY version:" >> body.txt
+          echo "  {{ $github.ref }}" >> body.txt
           echo "" >> body.txt
+
+          echo "Software versions:" >> body.txt
+          echo "${{ toJSON(env) }}" >> body.txt
+          echo "" >> body.txt
+
           echo "MD5 sums:" >> body.txt
-          (cd assets; md5sum *) >> body.txt
+          (cd assets; md5sum * | sed -e 's/^/  /') >> body.txt
+
           node ./repo-src/.github/workflows/api-client/main.js \
             update-release-body "$release_id" "$(cat body.txt)"
