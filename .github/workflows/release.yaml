@@ -504,7 +504,7 @@ jobs:
           echo "" >> body.txt
 
           echo "$GITHUB_REPOSITORY version:" >> body.txt
-          echo "  {{ $github.ref }}" >> body.txt
+          echo "  ${{ github.ref }}" >> body.txt
           echo "" >> body.txt
 
           echo "Software versions:" >> body.txt
