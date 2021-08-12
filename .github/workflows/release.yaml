@@ -495,16 +495,16 @@ jobs:
 
           # The format provided by "date -I" is "YYYY-MM-DD".
           echo "Date:" >> body.txt
-          echo "  $(date -I)" >> body.txt
+          echo " - $(date -I)" >> body.txt
           echo "" >> body.txt
 
           echo "$GITHUB_REPOSITORY version:" >> body.txt
-          echo "  $repo_tag" >> body.txt
+          echo " - $repo_tag" >> body.txt
           echo "" >> body.txt
 
           echo "Software versions:" >> body.txt
           cat repo-src/.github/workflows/versions.txt | \
-            sed -e 's/^/  /' >> body.txt
+            sed -e 's/^/ - /' >> body.txt
           echo "" >> body.txt
 
           # Update the release notes with this preliminary version.  This is
@@ -524,7 +524,7 @@ jobs:
 
           # Now add the MD5 sums to the release notes.
           echo "MD5 sums:" >> body.txt
-          (cd assets; md5sum * | sed -e 's/^/  /') >> body.txt
+          (cd assets; md5sum * | sed -e 's/^/ - /') >> body.txt
 
           # Now update the release notes one last time, with the MD5 sums
           # appended.
