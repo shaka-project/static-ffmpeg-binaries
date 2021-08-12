@@ -110,6 +110,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Debug GitHub environment variables
+        run: |
+          echo "{{ toJSON(env) }}"
+          exit 1
+
       - name: Install Linux packages
         if: runner.os == 'Linux'
         run: |
@@ -471,11 +476,11 @@ jobs:
             upload-all-assets "$release_id" assets/
 
       # NOTE: Uncomment this step to debug failures via SSH.
-      #- name: Debug
-      #  uses: mxschmitt/action-tmate@v3.6
-      #  with:
-      #    limit-access-to-actor: true
-      #  if: failure()
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3.6
+        with:
+          limit-access-to-actor: true
+        if: failure()
 
   publish_release:
     name: Publish release
