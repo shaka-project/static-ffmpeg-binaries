@@ -493,8 +493,9 @@ jobs:
           # and the versions of the software we built.
           > body.txt
 
+          # The format provided by "date -I" is "YYYY-MM-DD".
           echo "Date:" >> body.txt
-          echo "  $(date -u)" >> body.txt
+          echo "  $(date -I)" >> body.txt
           echo "" >> body.txt
 
           echo "$GITHUB_REPOSITORY version:" >> body.txt
