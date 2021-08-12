@@ -53,7 +53,8 @@ jobs:
 
           # Check out this repo and install node deps so that we can run the
           # API client.
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$GITHUB_REF"
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
           (cd repo-src/.github/workflows/api-client && npm install)
 
           # Create a draft release associated with the tag that triggered this
@@ -107,7 +108,8 @@ jobs:
 
           # Check out this repo and install node deps so that we can run the
           # API client.
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$GITHUB_REF"
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
           (cd repo-src/.github/workflows/api-client && npm install)
 
       - name: Install Linux packages
@@ -483,7 +485,8 @@ jobs:
 
           # Check out this repo and install node deps so that we can run the
           # API client.
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
           (cd repo-src/.github/workflows/api-client && npm install)
 
           # Compile the release notes (the "body" of the release) with the date
@@ -494,8 +497,6 @@ jobs:
           echo "  $(date -u)" >> body.txt
           echo "" >> body.txt
 
-          # Strip "refs/tags/foo" down to just "foo".
-          repo_tag=$(echo "${{ github.ref }}" | sed -e 's@.*/@@')
           echo "$GITHUB_REPOSITORY version:" >> body.txt
           echo "  $repo_tag" >> body.txt
           echo "" >> body.txt
