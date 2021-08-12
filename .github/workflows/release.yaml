@@ -101,17 +101,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out repo source
-        run: |
-          set -e
-          set -x
-
-          # Check out this repo and install node deps so that we can run the
-          # API client.
-          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
-          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
-          (cd repo-src/.github/workflows/api-client && npm install)
-
       - name: Install Linux packages
         if: runner.os == 'Linux'
         run: |
@@ -188,6 +177,17 @@ jobs:
 
           # Make sure that pkg-config searches the expected path.
           echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Check out repo source
+        run: |
+          set -e
+          set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
+          (cd repo-src/.github/workflows/api-client && npm install)
 
       - name: Install libvpx
         run: |
