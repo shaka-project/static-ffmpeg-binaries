@@ -209,8 +209,10 @@ if (!commandName) {
   okay = false;
 }
 
-// If there is no command name, there will also be no command, so this usage
-// section applies to both conditions above.
+// If something is wrong with the way the script was called, print usage
+// information.  The list of commands and their arguments are gleaned from
+// COMMAND_MAP, which was populated by registerCommand() and introspection of
+// the command functions.
 if (!okay) {
   console.error('');
   console.error('Usage:');
