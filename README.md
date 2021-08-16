@@ -29,6 +29,9 @@ and you can verify that they haven't been tampered with.  The sums in the
 workflow logs, release notes, and the binaries should all match.
 You can read the details in the [workflow source][workflow].
 
+No third-party GitHub Actions have been used in this workflow, to protect
+against supply-chain attacks.
+
 
 # Triggering a build
 
