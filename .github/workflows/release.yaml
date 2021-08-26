@@ -523,6 +523,11 @@ jobs:
           node ./repo-src/.github/workflows/api-client/main.js \
             publish-release "$release_id"
 
+          # The downloads are sometimes a bit flaky (responding with 404) if we
+          # don't put some delay between publication and download.  This number
+          # is arbitrary, but experimentally, it seems to solve the issue.
+          sleep 30
+
           # Next, download the assets.
           node ./repo-src/.github/workflows/api-client/main.js \
             download-all-assets "$release_id" assets/
