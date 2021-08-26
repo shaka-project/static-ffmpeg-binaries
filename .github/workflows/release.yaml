@@ -111,6 +111,8 @@ jobs:
           # TODO: Some of these are already on GitHub's VMs, but not our
           # self-hosted runner.  Try to make the self-hosted runner image more
           # compatible with what GitHub offers by default.
+          sudo apt -y update
+          sudo apt -y upgrade
           sudo apt -y install \
             cmake \
             mercurial \
