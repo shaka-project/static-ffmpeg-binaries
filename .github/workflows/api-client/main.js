@@ -86,7 +86,7 @@ async function repoApiCall(method, apiPath, data, upload=false) {
 
 async function draftRelease(tagName) {
   // Turns "refs/tags/foo" into "foo".
-  tagName = tagName.split('/').pop();
+  tagName = tagName.replace('refs/tags/', '');
 
   const response = await repoApiCall('POST', '/releases', {
     tag_name: tagName,

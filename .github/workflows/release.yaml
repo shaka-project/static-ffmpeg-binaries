@@ -495,7 +495,6 @@ jobs:
 
           # Compile the release notes (the "body" of the release) with the date
           # and the versions of the software we built.
-          > body.txt
 
           # The format provided by "date -I" is "YYYY-MM-DD".
           echo "Date:" >> body.txt
