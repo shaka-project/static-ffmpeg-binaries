@@ -57,7 +57,7 @@ function registerCommand(method) {
   // here.  (Don't be like me.)
   const firstLine = method.toString().split('\n')[0];
   const argString = firstLine.split('(')[1].split(')')[0];
-  const camelArgs = argString.replace(/\s+/, '').split(',');
+  const camelArgs = argString.replace(/\s+/g, '').split(',');
   const args = camelArgs.map(camelCaseToKebabCase);
 
   COMMAND_MAP[commandName] = {
