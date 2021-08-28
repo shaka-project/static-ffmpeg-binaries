@@ -1,0 +1,542 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A workflow to build and release fresh binaries.
+name: Release
+
+# Runs when a new tag is created.  Creates a release for that tag, then builds
+# ffmpeg and ffprobe on all OS & CPU combinations, then attaches them to the
+# release.
+on:
+  push:
+    tags:
+      - "*"
+
+# NOTE: The versions of the software we build are stored in versions.txt.
+
+# By default, run all commands in a bash shell.  On Windows, the default would
+# otherwise be powershell.  Each shell command should begin with "set -e" (to
+# make any failed command fail the script immediately) and "set -x" (to log
+# what commands are being run).
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # On a single Linux host, draft a release.  Later, different hosts will build
+  # for each OS/CPU in parallel, and then attach the resulting binaries to this
+  # draft.
+  draft_release:
+    name: Draft release
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.draft_release.outputs.release_id }}
+    steps:
+      - name: Draft release
+        id: draft_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
+          (cd repo-src/.github/workflows/api-client && npm install)
+
+          # Create a draft release associated with the tag that triggered this
+          # workflow.
+          tag="${{ github.ref }}"
+          release_id=$(node ./repo-src/.github/workflows/api-client/main.js draft-release "$tag")
+          echo "::set-output name=release_id::$release_id"
+
+  # On several different hosts, build ffmpeg's dependencies, then ffmpeg itself.
+  # The deps are all built as static libraries.
+  build:
+    needs: draft_release
+    strategy:
+      matrix:
+        # TODO: Add Mac arm64?
+        # TODO: Add Windows arm64?
+        # These are the OS images that we will run.  self-hosted-linux-arm64 is
+        # a self-hosted runner, as mid-2021, GitHub still does not offer arm64
+        # VMs.
+        os: ["ubuntu-latest", "macos-latest", "windows-latest", "self-hosted-linux-arm64"]
+
+        # Associate additional properties with each of these OS options.
+        # Commenting out an OS above is not enough to remove one.  Its section
+        # here must also be commented out.
+        include:
+          - os: ubuntu-latest
+            os_name: linux
+            target_arch: x64
+            exe_ext: ""
+          - os: macos-latest
+            os_name: osx
+            target_arch: x64
+            exe_ext: ""
+          - os: windows-latest
+            os_name: win
+            target_arch: x64
+            exe_ext: ".exe"
+          - os: self-hosted-linux-arm64
+            os_name: linux
+            target_arch: arm64
+            exe_ext: ""
+
+    name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Install Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          set -e
+          set -x
+
+          # Install missing packages on Linux.
+          # TODO: Some of these are already on GitHub's VMs, but not our
+          # self-hosted runner.  Try to make the self-hosted runner image more
+          # compatible with what GitHub offers by default.
+          sudo apt -y update
+          sudo apt -y upgrade
+          sudo apt -y install \
+            cmake \
+            mercurial \
+            nasm \
+            npm \
+            pkg-config \
+            yasm \
+            libffmpeg-nvenc-dev \
+            libvdpau-dev
+
+          # Use sudo in install commands on Linux.
+          echo "SUDO=sudo" >> "$GITHUB_ENV"
+
+      - name: Install macOS packages
+        if: runner.os == 'macOS'
+        run: |
+          set -e
+          set -x
+
+          # Use homebrew to install missing packages on mac.
+          brew install \
+            md5sha1sum \
+            mercurial \
+            nasm \
+            yasm
+
+          # Unlink pre-installed homebrew packages that conflict with our
+          # static library builds below.  They are still installed, but will no
+          # longer be symlinked into default library paths, and the ffmpeg
+          # build will not pick up pre-installed shared libraries we don't want.
+          # Only our static versions will be used.
+          brew unlink \
+            lame \
+            opus \
+            opusfile \
+            xz
+
+          # Use sudo in install commands on macOS.
+          echo "SUDO=sudo" >> "$GITHUB_ENV"
+
+      - name: Add msys2 to the Windows path
+        if: runner.os == 'Windows'
+        run: |
+          # At this point, we're running Git Bash.  After this step, we will be
+          # running msys bash, just as we would be when debugging via SSH with
+          # mxschmitt/action-tmate.
+          echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
+          echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+
+      - name: Install Windows packages
+        if: runner.os == 'Windows'
+        run: |
+          set -e
+          set -x
+
+          # Install msys packages we will need.
+          pacman -Sy --noconfirm \
+            git \
+            mercurial \
+            nasm \
+            yasm
+
+          # Make sure that cmake generates makefiles and not ninja files.
+          echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
+
+          # Make sure that pkg-config searches the path where we will install
+          # things.
+          echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+
+      - name: Check out repo source
+        run: |
+          set -e
+          set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
+          (cd repo-src/.github/workflows/api-client && npm install)
+
+      - name: Install libvpx
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh libvpx)
+          git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$tag"
+          cd libvpx
+
+          # NOTE: disabling unit tests and examples significantly reduces build
+          # time (by 80% as tested on a Jetson Nano)
+          ./configure \
+            --enable-vp8 \
+            --enable-vp9 \
+            --enable-runtime-cpu-detect \
+            --disable-unit-tests \
+            --disable-examples \
+            --enable-static \
+            --disable-shared
+
+          make
+          $SUDO make install
+
+      - name: Install aom
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh aom)
+          git clone --depth 1 https://aomedia.googlesource.com/aom/ -b "$tag"
+
+          # AOM insists on being built out-of-tree.
+          mkdir aom_build
+          cd aom_build
+
+          # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+          # to c:\Program Files.
+          cmake ../aom \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DENABLE_DOCS=OFF \
+            -DENABLE_EXAMPLES=OFF \
+            -DENABLE_TESTS=OFF \
+            -DENABLE_TESTDATA=OFF \
+            -DENABLE_TOOLS=OFF \
+            -DCONFIG_RUNTIME_CPU_DETECT=1 \
+            -DCONFIG_SHARED=0
+
+          make
+          $SUDO make install
+
+          # This adjustment to the aom linker flags is needed, at least on
+          # arm, to successfully link against it statically.  (-lm missing)
+          $SUDO sed -e 's/-laom/-laom -lm/' -i.bk /usr/local/lib/pkgconfig/aom.pc
+
+      - name: Install x264
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh x264)
+          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$tag"
+          cd x264
+
+          ./configure \
+            --enable-static
+
+          # Only build and install the static library.
+          make libx264.a
+          $SUDO make install-lib-static
+
+      - name: Install x265
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh x265)
+          hg clone http://hg.videolan.org/x265 -r "$tag"
+          cd x265/build
+
+          # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+          # to c:\Program Files.
+          cmake ../source \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DENABLE_SHARED=OFF \
+            -DENABLE_CLI=OFF
+
+          make
+          $SUDO make install
+
+          # This adjustment to the x265 linker flags is needed, at least on
+          # arm, to successfully link against it statically.  (-lgcc_s not
+          # found (or needed), and -lpthread missing)
+          $SUDO sed -e 's/-lgcc_s -lgcc -lgcc_s -lgcc/-lpthread -lgcc/' -i.bk /usr/local/lib/pkgconfig/x265.pc
+
+      - name: Install lame
+        run: |
+          set -e
+          set -x
+
+          version=$(repo-src/.github/workflows/get-version.sh lame)
+          curl -L -o lame-"$version".tar.gz https://sourceforge.net/projects/lame/files/lame/"$version"/lame-"$version".tar.gz/download
+          tar xzf lame-"$version".tar.gz
+          cd lame-"$version"
+
+          # Only build and install the library (--disable-front-end).  The
+          # frontend doesn't build on Windows, and we don't need it anyway.
+          # On Windows, somehow prefix defaults to / instead of /usr/local, but
+          # only on some projects.  No idea why that is the default on Windows,
+          # but --prefix=/usr/local fixes it.
+          ./configure \
+            --prefix=/usr/local \
+            --disable-frontend \
+            --enable-static \
+            --disable-shared
+
+          make
+          $SUDO make install
+
+      - name: Install opus
+        run: |
+          set -e
+          set -x
+
+          version=$(repo-src/.github/workflows/get-version.sh opus)
+          curl -LO https://archive.mozilla.org/pub/opus/opus-"$version".tar.gz
+          tar xzf opus-"$version".tar.gz
+          cd opus-"$version"
+
+          # On Windows, we can't link later if we build with -D_FORTIFY_SOURCE
+          # now.  But there is no configure option for this, so we edit the
+          # configure script instead.
+          sed -e 's/-D_FORTIFY_SOURCE=2//' -i.bk configure
+
+          # On Windows, somehow prefix defaults to / instead of /usr/local, but
+          # only on some projects.  No idea why that is the default on Windows,
+          # but --prefix=/usr/local fixes it.
+          # On Windows, we also need to disable-stack-protector.
+          ./configure \
+            --prefix=/usr/local \
+            --disable-extra-programs \
+            --disable-stack-protector \
+            --enable-static \
+            --disable-shared
+
+          make
+          $SUDO make install
+
+          # The pkgconfig linker flags for static opus don't work when ffmpeg
+          # checks for opus in configure.  Linking libm after libopus fixes it.
+          $SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
+
+      - name: Build ffmpeg and ffprobe
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh ffmpeg)
+          git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$tag"
+          cd ffmpeg
+
+          # Set some OS-specific environment variables and flags.
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export CFLAGS="-static"
+            export LDFLAGS="-static"
+
+            # Enable platform-specific hardware acceleration.
+            PLATFORM_CONFIGURE_FLAGS="--enable-nvenc --enable-vdpau"
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            export CFLAGS="-static"
+            # You can't do a _truly_ static build on macOS except the kernel.
+            # So don't set LDFLAGS.  See https://stackoverflow.com/a/3801032
+
+            # Enable platform-specific hardware acceleration.
+            PLATFORM_CONFIGURE_FLAGS="--enable-videotoolbox"
+
+            # Disable x86 ASM on macOS.  It fails to build with an error about
+            # how macho64 format can't contain 32-bit assembly.  I'm not sure
+            # how else to resolve this, and from my searches, it appears that
+            # others are not having this problem with ffmpeg.
+            # TODO: Try building from master branch to see if this has been
+            # resolved more recently than n4.4.
+            PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            export CFLAGS="-static"
+            # Surprisingly, /usr/local/lib is not in the mingw linker path by
+            # default.
+            export LDFLAGS="-static -L/usr/local/lib"
+
+            # Convince ffmpeg that we want to build for mingw64 (native
+            # Windows), not msys (which involves some posix emulation).  Since
+            # we're in an msys environment, ffmpeg reasonably assumes we're
+            # building for that environment if we don't specify this.
+            PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
+          fi
+
+          ./configure \
+            --pkg-config-flags="--static" \
+            --disable-ffplay \
+            --enable-libvpx \
+            --enable-libaom \
+            --enable-libx264 \
+            --enable-libx265 \
+            --enable-libmp3lame \
+            --enable-libopus \
+            --enable-runtime-cpudetect \
+            --enable-gpl \
+            --enable-version3 \
+            --enable-static \
+            $PLATFORM_CONFIGURE_FLAGS
+
+          make
+          # No "make install" for ffmpeg.
+
+      - name: Check that executables are static
+        run: |
+          set -e
+          set -x
+
+          cd ffmpeg
+
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            # If ldd succeeds, then these are dynamic executables, so we fail
+            # this step if ldd succeeds.
+            ldd ffmpeg && exit 1
+            ldd ffprobe && exit 1
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            # These will still be dynamic executables, but they should not link
+            # against anything outside of /c/Windows.  The grep command will
+            # succeed if it can find anything outside /c/Windows, and then we
+            # fail if that succeeds.
+            ldd ffmpeg.exe | grep -qvi /c/Windows/ && exit 1
+            ldd ffprobe.exe | grep -qvi /c/Windows/ && exit 1
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            # These will still be dynamic executables, but they should not link
+            # against anything outside of /usr/lib or /System/Library.  The
+            # grep command will succeed if it can find anything outside
+            # these two folders, and then we fail if that succeeds.
+            otool -L ffmpeg | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
+            otool -L ffprobe | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
+          fi
+
+          # After commands that we expect to fail (greps and ldd commands
+          # above), we still need a successful command at the end of the script
+          # to make this step of the workflow a success.
+          true
+
+      - name: Prepare assets
+        run: |
+          set -e
+          set -x
+
+          mkdir assets
+          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
+          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
+          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
+
+          # Show sizes and MD5 sums that can be verified by users later if they
+          # want to check for authenticity.
+          cd assets
+          wc -c *
+          md5sum *
+
+      - name: Attach assets to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          set -x
+
+          # Attach the build outputs to the draft release.  Each machine will
+          # do this separately and in parallel.  Later, another job will take
+          # over to collect them all and use their MD5 sums to create the
+          # release notes (the "body" of the release).
+          release_id="${{ needs.draft_release.outputs.release_id }}"
+          node ./repo-src/.github/workflows/api-client/main.js \
+            upload-all-assets "$release_id" assets/
+
+      # NOTE: Uncomment this step to debug failures via SSH.
+      #- name: Debug
+      #  uses: mxschmitt/action-tmate@v3.6
+      #  with:
+      #    limit-access-to-actor: true
+      #  if: failure()
+
+  publish_release:
+    name: Publish release
+    needs: [draft_release, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          set -x
+
+          # Check out this repo and install node deps so that we can run the
+          # API client.
+          repo_tag=$(echo "$GITHUB_REF" | sed -e 's@.*/@@')
+          git clone --depth 1 https://github.com/"$GITHUB_REPOSITORY" repo-src -b "$repo_tag"
+          (cd repo-src/.github/workflows/api-client && npm install)
+
+          # Compile the release notes (the "body" of the release) with the date
+          # and the versions of the software we built.
+
+          # The format provided by "date -I" is "YYYY-MM-DD".
+          echo "Date:" >> body.txt
+          echo " - $(date -I)" >> body.txt
+          echo "" >> body.txt
+
+          echo "$GITHUB_REPOSITORY version:" >> body.txt
+          echo " - $repo_tag" >> body.txt
+          echo "" >> body.txt
+
+          echo "Software versions:" >> body.txt
+          cat repo-src/.github/workflows/versions.txt | \
+            sed -e 's/^/ - /' >> body.txt
+          echo "" >> body.txt
+
+          # Update the release notes with this preliminary version.  This is
+          # what gets emailed out when we publish the release below.
+          release_id="${{ needs.draft_release.outputs.release_id }}"
+          node ./repo-src/.github/workflows/api-client/main.js \
+            update-release-body "$release_id" "$(cat body.txt)"
+
+          # Now we have to take the release out of draft mode.  Until we do, we
+          # can't get download URLs for the assets.
+          node ./repo-src/.github/workflows/api-client/main.js \
+            publish-release "$release_id"
+
+          # The downloads are sometimes a bit flaky (responding with 404) if we
+          # don't put some delay between publication and download.  This number
+          # is arbitrary, but experimentally, it seems to solve the issue.
+          sleep 30
+
+          # Next, download the assets.
+          node ./repo-src/.github/workflows/api-client/main.js \
+            download-all-assets "$release_id" assets/
+
+          # Now add the MD5 sums to the release notes.
+          echo "MD5 sums:" >> body.txt
+          (cd assets; md5sum * | sed -e 's/^/ - /') >> body.txt
+
+          # Now update the release notes one last time, with the MD5 sums
+          # appended.
+          node ./repo-src/.github/workflows/api-client/main.js \
+            update-release-body "$release_id" "$(cat body.txt)"
