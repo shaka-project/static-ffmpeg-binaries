@@ -68,6 +68,9 @@ jobs:
   build:
     needs: draft_release
     strategy:
+      # Let other matrix entries complete, so we have all results on failure
+      # instead of just the first failure.
+      fail-fast: false
       matrix:
         # TODO: Add Mac arm64?
         # TODO: Add Windows arm64?
@@ -344,6 +347,29 @@ jobs:
           # checks for opus in configure.  Linking libm after libopus fixes it.
           $SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
 
+      - name: Install mbedtls
+        run: |
+          set -e
+          set -x
+
+          tag=$(repo-src/.github/workflows/get-version.sh mbedtls)
+
+          # TODO: We are now using v2.27.0 for compatibility issues with ffmpeg.
+          # The latest version is v3.0.0.
+          git clone --depth 1 https://github.com/ARMmbed/mbedtls.git -b "$tag"
+
+          cd mbedtls
+
+          # This flag is needed when building on Windows.
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            export WINDOWS_BUILD=1
+          fi
+
+          # NOTE: The library is built statically unless SHARED environment
+          # variable is set.
+          make no_test
+          $SUDO make install
+
       - name: Build ffmpeg and ffprobe
         run: |
           set -e
@@ -376,9 +402,9 @@ jobs:
             # resolved more recently than n4.4.
             PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
           elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            export CFLAGS="-static"
-            # Surprisingly, /usr/local/lib is not in the mingw linker path by
-            # default.
+            # /usr/local/incude and /usr/local/lib are not in mingw's include
+            # and linker paths by default, so add them.
+            export CFLAGS="-static -I/usr/local/include"
             export LDFLAGS="-static -L/usr/local/lib"
 
             # Convince ffmpeg that we want to build for mingw64 (native
@@ -397,6 +423,7 @@ jobs:
             --enable-libx265 \
             --enable-libmp3lame \
             --enable-libopus \
+            --enable-mbedtls \
             --enable-runtime-cpudetect \
             --enable-gpl \
             --enable-version3 \
