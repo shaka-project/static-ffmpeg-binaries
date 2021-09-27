@@ -353,9 +353,6 @@ jobs:
           set -x
 
           tag=$(repo-src/.github/workflows/get-version.sh mbedtls)
-
-          # TODO: We are now using v2.27.0 for compatibility issues with ffmpeg.
-          # The latest version is v3.0.0.
           git clone --depth 1 https://github.com/ARMmbed/mbedtls.git -b "$tag"
 
           cd mbedtls
