@@ -50,10 +50,10 @@ FFmpeg version, the next release would be "n4.4-2".  When FFmpeg n4.5 is
 released upstream, we could update to that and then tag "n4.5-1".
 
 
-[releases]: https://github.com/joeyparrish/static-ffmpeg-binaries/releases
-[workflow]: https://github.com/joeyparrish/static-ffmpeg-binaries/blob/main/.github/workflows/release.yaml
-[api-client]: https://github.com/joeyparrish/static-ffmpeg-binaries/blob/main/.github/workflows/api-client/main.js
-[version-script]: https://github.com/joeyparrish/static-ffmpeg-binaries/blob/main/.github/workflows/get-version.sh
-[version-file]: https://github.com/joeyparrish/static-ffmpeg-binaries/blob/main/.github/workflows/versions.txt
-[apache]: https://github.com/joeyparrish/static-ffmpeg-binaries/blob/main/LICENSE
+[releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
+[workflow]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/release.yaml
+[api-client]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/api-client/main.js
+[version-script]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/get-version.sh
+[version-file]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/versions.txt
+[apache]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/LICENSE
 [gpl]: https://github.com/FFmpeg/FFmpeg/blob/master/COPYING.GPLv3
