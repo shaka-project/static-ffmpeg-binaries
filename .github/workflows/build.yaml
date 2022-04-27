@@ -127,9 +127,15 @@ jobs:
           # static library builds below.  They are still installed, but will no
           # longer be symlinked into default library paths, and the ffmpeg
           # build will not pick up pre-installed shared libraries we don't want.
-          # Only our static versions will be used.
+          # Only our static versions will be used.  The list of preinstalled
+          # packages in the GitHub Actions environment may change over time, so
+          # this list may need to change, as well.
           brew unlink \
+            aom \
             lame \
+            libxau \
+            libxcb \
+            libxdmcp \
             opus \
             opusfile \
             xz
@@ -153,8 +159,17 @@ jobs:
           set -x
 
           # Install msys packages we will need.
+          # NOTE: Add tools to this list if you see errors like
+          # "shared_info::initialize: size of shared memory region changed".
+          # The tools reporting such errors need to be explicitly replaced by
+          # msys versions.  The list of preinstalled packages in the GitHub
+          # Actions environment may change over time, so this list may need to
+          # change, as well.
           pacman -Sy --noconfirm \
+            diffutils \
+            gcc \
             git \
+            make \
             mercurial \
             nasm \
             yasm
@@ -203,8 +218,12 @@ jobs:
 
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
+          # NOTE: without CMAKE_INSTALL_LIBDIR on Linux, pkgconfig and static
+          # libs are installed to /usr/local/lib/x86_64-linux-gnu/ instead of
+          # /usr/local/lib/.
           cmake ../aom \
             -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_INSTALL_LIBDIR=lib \
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
