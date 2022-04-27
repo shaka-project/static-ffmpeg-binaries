@@ -117,7 +117,6 @@ jobs:
           sudo apt -y upgrade
           sudo apt -y install \
             cmake \
-            mercurial \
             nasm \
             npm \
             pkg-config \
@@ -137,7 +136,6 @@ jobs:
           # Use homebrew to install missing packages on mac.
           brew install \
             md5sha1sum \
-            mercurial \
             nasm \
             yasm
 
@@ -194,7 +192,6 @@ jobs:
             diffutils \
             git \
             make \
-            mercurial \
             nasm \
             yasm
 
@@ -269,8 +266,9 @@ jobs:
           set -x
 
           tag=$(repo-src/.github/workflows/get-version.sh x264)
-          git clone --depth 1 https://code.videolan.org/videolan/x264.git -b "$tag"
+          git clone https://code.videolan.org/videolan/x264.git
           cd x264
+          git checkout "$tag"
 
           ./configure \
             --enable-static
@@ -285,8 +283,8 @@ jobs:
           set -x
 
           tag=$(repo-src/.github/workflows/get-version.sh x265)
-          hg clone http://hg.videolan.org/x265 -r "$tag"
-          cd x265/build
+          git clone --depth 1 https://bitbucket.org/multicoreware/x265_git.git -b "$tag"
+          cd x265_git/build
 
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
