@@ -158,6 +158,15 @@ jobs:
           set -e
           set -x
 
+          # NOTE: pacman is hanging, and the best workaround seems to be to
+          # downgrade it and use --ignore pacman below to keep it from being
+          # re-upgraded.
+          # See https://github.com/msys2/msys2.github.io/issues/82
+          wget http://repo.msys2.org/msys/x86_64/pacman-5.2.2-19-x86_64.pkg.tar.zst
+          zstd -d pacman-5.2.2-19-x86_64.pkg.tar.zst -o pacman-5.2.2-19-x86_64.pkg.tar
+          tar -xvf pacman-5.2.2-19-x86_64.pkg.tar --strip-components 2 usr/bin/pacman.exe
+          cp pacman.exe /usr/bin/pacman.exe
+
           # Install msys packages we will need.
           # NOTE: Add tools to this list if you see errors like
           # "shared_info::initialize: size of shared memory region changed".
@@ -165,8 +174,6 @@ jobs:
           # msys versions.  The list of preinstalled packages in the GitHub
           # Actions environment may change over time, so this list may need to
           # change, as well.
-          # NOTE: --ignore pacman works around a hang detailed in
-          # https://github.com/msys2/msys2.github.io/issues/82
           pacman -Sy --noconfirm \
             --ignore pacman \
             diffutils \
