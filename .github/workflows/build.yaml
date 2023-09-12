@@ -165,7 +165,10 @@ jobs:
           # msys versions.  The list of preinstalled packages in the GitHub
           # Actions environment may change over time, so this list may need to
           # change, as well.
+          # NOTE: --ignore pacman works around a hang detailed in
+          # https://github.com/msys2/msys2.github.io/issues/82
           pacman -Sy --noconfirm \
+            --ignore pacman \
             diffutils \
             gcc \
             git \
@@ -441,7 +444,7 @@ jobs:
       - name: Upload assets as artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: binaries-${{ env.SUFFIX }}
+          name: binaries${{ env.SUFFIX }}
           path: assets/*
 
       - name: Check that executables are static
