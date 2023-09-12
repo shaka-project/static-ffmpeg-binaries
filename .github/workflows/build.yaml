@@ -419,6 +419,31 @@ jobs:
           make
           # No "make install" for ffmpeg.
 
+      - name: Prepare assets
+        run: |
+          set -e
+          set -x
+
+          mkdir assets
+          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
+          echo "SUFFIX=$SUFFIX" >> "$GITHUB_ENV"
+          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
+          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
+
+          # Show sizes and MD5 sums that can be verified by users later if they
+          # want to check for authenticity.
+          cd assets
+          wc -c *
+          md5sum *
+
+      # This makes it possible to debug failures in the next step by
+      # downloading binaries that fail the check for static linkage.
+      - name: Upload assets as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ env.SUFFIX }}
+          path: assets/*
+
       - name: Check that executables are static
         run: |
           set -e
@@ -451,22 +476,6 @@ jobs:
           # above), we still need a successful command at the end of the script
           # to make this step of the workflow a success.
           true
-
-      - name: Prepare assets
-        run: |
-          set -e
-          set -x
-
-          mkdir assets
-          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
-          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
-          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
-
-          # Show sizes and MD5 sums that can be verified by users later if they
-          # want to check for authenticity.
-          cd assets
-          wc -c *
-          md5sum *
 
       - name: Attach assets to release
         if: inputs.release_id != ''
