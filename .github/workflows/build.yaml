@@ -355,6 +355,7 @@ jobs:
           # This flag is needed when building on Windows.
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             export WINDOWS_BUILD=1
+            export CC=gcc
           fi
 
           # NOTE: The library is built statically unless SHARED environment
@@ -501,8 +502,8 @@ jobs:
             upload-all-assets "$release_id" assets/
 
       # NOTE: Uncomment this step to debug failures via SSH.
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3.6
-        with:
-          limit-access-to-actor: true
-        if: failure()
+      #- name: Debug
+      #  uses: mxschmitt/action-tmate@v3.6
+      #  with:
+      #    limit-access-to-actor: true
+      #  if: failure()
