@@ -60,7 +60,7 @@ fi
   --pkg-config-flags="--static" \
   --disable-ffplay \
   --enable-libvpx \
-  --enable-libaom \
+  --enable-libsvtav1 \
   --enable-libx264 \
   --enable-libx265 \
   --enable-libmp3lame \

@@ -1,6 +1,6 @@
-ffmpeg: n4.4
+ffmpeg: n6.0
 libvpx: v1.9.0
-aom: v3.1.2
+svt-av1: v1.7.0
 x264: bfc87b7a
 x265: 3.5
 lame: 3.100

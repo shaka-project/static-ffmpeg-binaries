@@ -157,6 +157,7 @@ jobs:
             aom \
             lame \
             libvpx \
+            libx11 \
             libxau \
             libxcb \
             libxdmcp \
@@ -211,8 +212,8 @@ jobs:
       - name: Install libvpx
         run: ./repo-src/build-scripts/01-libvpx.sh
 
-      - name: Install aom
-        run: ./repo-src/build-scripts/02-aom.sh
+      - name: Install SVT-AV1
+        run: ./repo-src/build-scripts/02-svt-av1.sh
 
       - name: Install x264
         run: ./repo-src/build-scripts/03-x264.sh
