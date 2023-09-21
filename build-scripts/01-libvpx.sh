@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh libvpx)
+tag=$(repo-src/get-version.sh libvpx)
 git clone --depth 1 https://chromium.googlesource.com/webm/libvpx -b "$tag"
 cd libvpx
 

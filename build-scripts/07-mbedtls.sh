@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh mbedtls)
+tag=$(repo-src/get-version.sh mbedtls)
 git clone --depth 1 https://github.com/ARMmbed/mbedtls.git -b "$tag"
 
 cd mbedtls

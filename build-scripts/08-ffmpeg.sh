@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh ffmpeg)
+tag=$(repo-src/get-version.sh ffmpeg)
 git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git -b "$tag"
 cd ffmpeg
 

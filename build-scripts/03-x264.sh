@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh x264)
+tag=$(repo-src/get-version.sh x264)
 git clone https://code.videolan.org/videolan/x264.git
 cd x264
 git checkout "$tag"
