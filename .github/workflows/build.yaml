@@ -145,12 +145,25 @@ jobs:
           # static library builds below.  They are still installed, but will no
           # longer be symlinked into default library paths, and the ffmpeg
           # build will not pick up pre-installed shared libraries we don't want.
-          # Only our static versions will be used.
-          brew unlink \
+          # Only our static versions will be used.  The list of preinstalled
+          # packages in the GitHub Actions environment may change over time, so
+          # this list may need to change, as well.  Ignore errors if one of
+          # these is not installed.
+          for i in \
+            aom \
             lame \
+            libvpx \
+            libxau \
+            libxcb \
+            libxdmcp \
+            mbedtls \
             opus \
             opusfile \
-            xz
+            svt-av1 \
+            x264 \
+            x265 \
+            xz \
+          ; do brew unlink $i || true; done
 
           # Use sudo in install commands on macOS.
           echo "SUDO=sudo" >> "$GITHUB_ENV"
@@ -171,8 +184,16 @@ jobs:
           set -x
 
           # Install msys packages we will need.
+          # NOTE: Add tools to this list if you see errors like
+          # "shared_info::initialize: size of shared memory region changed".
+          # The tools reporting such errors need to be explicitly replaced by
+          # msys versions.  The list of preinstalled packages in the GitHub
+          # Actions environment may change over time, so this list may need to
+          # change, as well.
           pacman -Sy --noconfirm \
+            diffutils \
             git \
+            make \
             mercurial \
             nasm \
             yasm
@@ -221,8 +242,12 @@ jobs:
 
           # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
           # to c:\Program Files.
+          # NOTE: without CMAKE_INSTALL_LIBDIR on Linux, pkgconfig and static
+          # libs are installed to /usr/local/lib/x86_64-linux-gnu/ instead of
+          # /usr/local/lib/.
           cmake ../aom \
             -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_INSTALL_LIBDIR=lib \
             -DENABLE_DOCS=OFF \
             -DENABLE_EXAMPLES=OFF \
             -DENABLE_TESTS=OFF \
@@ -348,6 +373,7 @@ jobs:
           # This flag is needed when building on Windows.
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             export WINDOWS_BUILD=1
+            export CC=gcc
           fi
 
           # NOTE: The library is built statically unless SHARED environment
@@ -418,6 +444,31 @@ jobs:
           make
           # No "make install" for ffmpeg.
 
+      - name: Prepare assets
+        run: |
+          set -e
+          set -x
+
+          mkdir assets
+          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
+          echo "SUFFIX=$SUFFIX" >> "$GITHUB_ENV"
+          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
+          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
+
+          # Show sizes and MD5 sums that can be verified by users later if they
+          # want to check for authenticity.
+          cd assets
+          wc -c *
+          md5sum *
+
+      # This makes it possible to debug failures in the next step by
+      # downloading binaries that fail the check for static linkage.
+      - name: Upload assets as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries${{ env.SUFFIX }}
+          path: assets/*
+
       - name: Check that executables are static
         run: |
           set -e
@@ -450,22 +501,6 @@ jobs:
           # above), we still need a successful command at the end of the script
           # to make this step of the workflow a success.
           true
-
-      - name: Prepare assets
-        run: |
-          set -e
-          set -x
-
-          mkdir assets
-          SUFFIX="-${{ matrix.os_name }}-${{ matrix.target_arch }}${{ matrix.exe_ext}}"
-          cp ffmpeg/ffmpeg assets/ffmpeg"$SUFFIX"
-          cp ffmpeg/ffprobe assets/ffprobe"$SUFFIX"
-
-          # Show sizes and MD5 sums that can be verified by users later if they
-          # want to check for authenticity.
-          cd assets
-          wc -c *
-          md5sum *
 
       - name: Attach assets to release
         if: inputs.release_id != ''
