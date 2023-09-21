@@ -29,6 +29,13 @@ on:
       # So we call our secret parameter simply TOKEN.
       TOKEN:
         required: false
+      # These below are not actual secrets, but secrets are the only place to
+      # keep repo-specific configs that make this project friendlier to forks
+      # and easier to debug.
+      ENABLE_DEBUG:
+        required: true
+      ENABLE_SELF_HOSTED:
+        required: true
 
 # NOTE: The versions of the software we build are stored in versions.txt.
 
@@ -41,47 +48,58 @@ defaults:
     shell: bash
 
 jobs:
+  # Configure the build matrix based on inputs.  The list of objects in the
+  # build matrix contents can't be changed by conditionals, but it can be
+  # computed by another job and deserialized.  This uses
+  # secrets.ENABLE_SELF_HOSTED to determine the build matrix, based on the
+  # metadata in build-matrix.json.
+  matrix_config:
+    runs-on: ubuntu-latest
+    outputs:
+      MATRIX: ${{ steps.configure.outputs.MATRIX }}
+      ENABLE_DEBUG: ${{ steps.configure.outputs.ENABLE_DEBUG }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo-src
+
+      - name: Configure Build Matrix
+        id: configure
+        shell: node {0}
+        run: |
+          const enableDebug = "${{ secrets.ENABLE_DEBUG }}" != '';
+          const enableSelfHosted = "${{ secrets.ENABLE_SELF_HOSTED }}" != '';
+
+          // Use ENABLE_SELF_HOSTED to decide what the build matrix below
+          // should include.
+          const {hosted, selfHosted} = require("${{ github.workspace }}/repo-src/.github/workflows/build-matrix.json");
+          const matrix = enableSelfHosted ? hosted.concat(selfHosted) : hosted;
+
+          // Output a JSON object consumed by the build matrix below.
+          console.log(`::set-output name=MATRIX::${ JSON.stringify(matrix) }`);
+
+          // Output the debug flag directly.
+          console.log(`::set-output name=ENABLE_DEBUG::${ enableDebug }`);
+
+          // Log the outputs, for the sake of debugging this script.
+          console.log({enableDebug, matrix});
+
   # On several different hosts, build ffmpeg's dependencies, then ffmpeg itself.
   # The deps are all built as static libraries.
   build:
+    needs: matrix_config
     strategy:
       # Let other matrix entries complete, so we have all results on failure
       # instead of just the first failure.
       fail-fast: false
       matrix:
-        # TODO: Add Mac arm64?
-        # TODO: Add Windows arm64?
-        # These are the OS images that we will run.  self-hosted-linux-arm64 is
-        # a self-hosted runner, as mid-2021, GitHub still does not offer arm64
-        # VMs.
-        os: ["ubuntu-latest", "macos-latest", "windows-latest", "self-hosted-linux-arm64"]
-
-        # Associate additional properties with each of these OS options.
-        # Commenting out an OS above is not enough to remove one.  Its section
-        # here must also be commented out.
-        include:
-          - os: ubuntu-latest
-            os_name: linux
-            target_arch: x64
-            exe_ext: ""
-          - os: macos-latest
-            os_name: osx
-            target_arch: x64
-            exe_ext: ""
-          - os: windows-latest
-            os_name: win
-            target_arch: x64
-            exe_ext: ".exe"
-          - os: self-hosted-linux-arm64
-            os_name: linux
-            target_arch: arm64
-            exe_ext: ""
+        include: ${{ fromJSON(needs.matrix_config.outputs.MATRIX) }}
 
     name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: repo-src
 
@@ -466,9 +484,8 @@ jobs:
           node ./repo-src/.github/workflows/api-client/main.js \
             upload-all-assets "$release_id" assets/
 
-      # NOTE: Uncomment this step to debug failures via SSH.
-      #- name: Debug
-      #  uses: mxschmitt/action-tmate@v3.6
-      #  with:
-      #    limit-access-to-actor: true
-      #  if: failure()
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3.6
+        with:
+          limit-access-to-actor: true
+        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG != ''

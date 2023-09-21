@@ -23,6 +23,12 @@ on:
     tags:
       - "*"
 
+# NOTE: Set the repository secret ENABLE_DEBUG to enable debugging via tmate on
+# failure.
+# NOTE: Set the repository secret ENABLE_SELF_HOSTED to enable self-hosted
+# runners such as linux-arm64.  This is set on the official repo, but forks
+# will have to opt in after setting up their own self-hosted runners.
+
 jobs:
   # On a single Linux host, draft a release.  Later, different hosts will build
   # for each OS/CPU in parallel, and then attach the resulting binaries to this
@@ -33,7 +39,7 @@ jobs:
     outputs:
       release_id: ${{ steps.draft_release.outputs.release_id }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: repo-src
 
@@ -59,13 +65,15 @@ jobs:
       release_id: ${{ needs.draft_release.outputs.release_id }}
     secrets:
       TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ENABLE_DEBUG: ${{ secrets.ENABLE_DEBUG }}
+      ENABLE_SELF_HOSTED: ${{ secrets.ENABLE_SELF_HOSTED }}
 
   publish_release:
     name: Publish release
     needs: [draft_release, build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           path: repo-src
 

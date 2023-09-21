@@ -28,6 +28,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# NOTE: Set the repository secret ENABLE_DEBUG to enable debugging via tmate on
+# failure.
+# NOTE: Set the repository secret ENABLE_SELF_HOSTED to enable self-hosted
+# runners such as linux-arm64.  This is set on the official repo, but forks
+# will have to opt in after setting up their own self-hosted runners.
+
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
+    secrets:
+      ENABLE_DEBUG: ${{ secrets.ENABLE_DEBUG }}
+      ENABLE_SELF_HOSTED: ${{ secrets.ENABLE_SELF_HOSTED }}
