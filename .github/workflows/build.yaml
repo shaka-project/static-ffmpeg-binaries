@@ -57,7 +57,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       MATRIX: ${{ steps.configure.outputs.MATRIX }}
-      ENABLE_DEBUG: ${{ steps.configure.outputs.ENABLE_DEBUG }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,11 +79,6 @@ jobs:
           fs.appendFileSync(
               process.env['GITHUB_OUTPUT'],
               `MATRIX=${ JSON.stringify(matrix) }\n`);
-
-          // Output the debug flag directly.
-          fs.appendFileSync(
-              process.env['GITHUB_OUTPUT'],
-              `ENABLE_DEBUG=${ enableDebug }\n`);
 
           // Log the outputs, for the sake of debugging this script.
           console.log({enableDebug, matrix});
@@ -526,4 +520,4 @@ jobs:
         uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
-        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG != ''
+        if: failure() && secrets.ENABLE_DEBUG != ''
