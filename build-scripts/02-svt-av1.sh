@@ -23,7 +23,10 @@ git clone --depth 1 https://gitlab.com/AOMediaCodec/SVT-AV1 -b "$tag"
 mkdir SVT-AV1-build
 cd SVT-AV1-build
 
+# NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+# to c:\Program Files.
 cmake ../SVT-AV1 \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
   -DBUILD_SHARED_LIBS=OFF \
   -DBUILD_TESTING=OFF \
   -DCOVERAGE=OFF \
