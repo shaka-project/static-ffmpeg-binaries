@@ -67,6 +67,7 @@ jobs:
         id: configure
         shell: node {0}
         run: |
+          const fs = require('fs');
           const enableDebug = "${{ secrets.ENABLE_DEBUG }}" != '';
           const enableSelfHosted = "${{ secrets.ENABLE_SELF_HOSTED }}" != '';
 
@@ -76,10 +77,14 @@ jobs:
           const matrix = enableSelfHosted ? hosted.concat(selfHosted) : hosted;
 
           // Output a JSON object consumed by the build matrix below.
-          console.log(`::set-output name=MATRIX::${ JSON.stringify(matrix) }`);
+          fs.appendFileSync(
+              process.env['GITHUB_OUTPUT'],
+              `MATRIX=${ JSON.stringify(matrix) }\n`);
 
           // Output the debug flag directly.
-          console.log(`::set-output name=ENABLE_DEBUG::${ enableDebug }`);
+          fs.appendFileSync(
+              process.env['GITHUB_OUTPUT'],
+              `ENABLE_DEBUG=${ enableDebug }\n`);
 
           // Log the outputs, for the sake of debugging this script.
           console.log({enableDebug, matrix});
