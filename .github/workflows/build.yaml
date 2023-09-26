@@ -526,4 +526,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
-        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG != ''
+        # NOTE: You cannot refer to secrets directly here when this workflow is
+        # called from another.
+        # NOTE: The ENABLE_DEBUG flag has been converted into "true" or "false".
+        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG == 'true'
