@@ -194,11 +194,15 @@ jobs:
           # msys versions.  The list of preinstalled packages in the GitHub
           # Actions environment may change over time, so this list may need to
           # change, as well.
+          # NOTE: pkg-config specifically must be installed because of
+          # https://github.com/actions/runner-images/issues/5459, in which
+          # there is a conflicting version that GitHub will not remove.
           pacman -Sy --noconfirm \
             diffutils \
             git \
             make \
             nasm \
+            pkg-config \
             yasm
 
           # Make sure that cmake generates makefiles and not ninja files.
