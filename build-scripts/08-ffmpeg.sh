@@ -55,6 +55,12 @@ elif [[ "$RUNNER_OS" == "Windows" ]]; then
   PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
 fi
 
+# Install a patch from https://github.com/FFmpeg/FFmpeg/commit/effadce6 to
+# resolve the binutils error "operand type mismatch for shr" on Windows,
+# described in https://github.com/msys2/MINGW-packages/issues/17946
+wget https://github.com/FFmpeg/FFmpeg/commit/effadce6.patch
+patch -p1 -i effadce6.patch
+
 if ! ./configure \
     --pkg-config-flags="--static" \
     --disable-ffplay \

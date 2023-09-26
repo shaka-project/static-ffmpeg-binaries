@@ -203,11 +203,17 @@ jobs:
           # NOTE: pkg-config specifically must be installed because of
           # https://github.com/actions/runner-images/issues/5459, in which
           # there is a conflicting version that GitHub will not remove.
+          # NOTE: mingw-w64-x86_64-gcc must be installed because of conflicting
+          # GCC toolchains installed with Strawberry Perl, Git, and one more
+          # through Chocolatey.  None of these build clean executables that
+          # only depend on standard DLLs.
           pacman -Sy --noconfirm \
             diffutils \
             git \
             make \
+            mingw-w64-x86_64-gcc \
             nasm \
+            patch \
             pkg-config \
             yasm
 
