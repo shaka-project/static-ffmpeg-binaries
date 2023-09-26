@@ -21,21 +21,29 @@ cd ffmpeg
 
 if [[ "$RUNNER_OS" == "Linux" ]]; then
   # If ldd succeeds, then these are dynamic executables, so we fail
-  # this step if ldd succeeds.
+  # this step if ldd succeeds.  The output of ldd will still be logged.
   ldd ffmpeg && exit 1
   ldd ffprobe && exit 1
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
-  # These will still be dynamic executables, but they should not link
-  # against anything outside of /c/Windows.  The grep command will
-  # succeed if it can find anything outside /c/Windows, and then we
-  # fail if that succeeds.
+  # These will still be dynamic executables.
+  # Log the full list of DLL dependencies, for debugging.
+  ldd ffmpeg.exe
+  ldd ffprobe.exe
+
+  # These should not link against anything outside of /c/Windows.  The grep
+  # command will succeed if it can find anything outside /c/Windows, and then
+  # we fail if that succeeds.
   ldd ffmpeg.exe | grep -qvi /c/Windows/ && exit 1
   ldd ffprobe.exe | grep -qvi /c/Windows/ && exit 1
 elif [[ "$RUNNER_OS" == "macOS" ]]; then
-  # These will still be dynamic executables, but they should not link
-  # against anything outside of /usr/lib or /System/Library.  The
-  # grep command will succeed if it can find anything outside
-  # these two folders, and then we fail if that succeeds.
+  # These will still be dynamic executables.
+  # Log the full list of dynamic library dependencies, for debugging.
+  otool -L ffmpeg
+  otool -L ffprobe
+
+  # These should not link against anything outside of /usr/lib or
+  # /System/Library.  The grep command will succeed if it can find anything
+  # outside these two folders, and then we fail if that succeeds.
   otool -L ffmpeg | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
   otool -L ffprobe | grep '\t' | grep -Evq '(/System/Library|/usr/lib)' && exit 1
 fi
