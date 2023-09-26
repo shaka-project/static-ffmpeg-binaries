@@ -39,9 +39,8 @@ elif [[ "$RUNNER_OS" == "macOS" ]]; then
   # Disable x86 ASM on macOS.  It fails to build with an error about
   # how macho64 format can't contain 32-bit assembly.  I'm not sure
   # how else to resolve this, and from my searches, it appears that
-  # others are not having this problem with ffmpeg.
-  # TODO: Try building from master branch to see if this has been
-  # resolved more recently than n4.4.
+  # others are not having this problem with ffmpeg.  This is still a problem
+  # with n6.0.
   PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # /usr/local/incude and /usr/local/lib are not in mingw's include
