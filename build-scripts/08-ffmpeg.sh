@@ -55,21 +55,24 @@ elif [[ "$RUNNER_OS" == "Windows" ]]; then
   PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
 fi
 
-./configure \
-  --pkg-config-flags="--static" \
-  --disable-ffplay \
-  --enable-libvpx \
-  --enable-libsvtav1 \
-  --enable-libx264 \
-  --enable-libx265 \
-  --enable-libmp3lame \
-  --enable-libopus \
-  --enable-mbedtls \
-  --enable-runtime-cpudetect \
-  --enable-gpl \
-  --enable-version3 \
-  --enable-static \
-  $PLATFORM_CONFIGURE_FLAGS
+if ! ./configure \
+    --pkg-config-flags="--static" \
+    --disable-ffplay \
+    --enable-libvpx \
+    --enable-libsvtav1 \
+    --enable-libx264 \
+    --enable-libx265 \
+    --enable-libmp3lame \
+    --enable-libopus \
+    --enable-mbedtls \
+    --enable-runtime-cpudetect \
+    --enable-gpl \
+    --enable-version3 \
+    --enable-static \
+    $PLATFORM_CONFIGURE_FLAGS; then
+  cat ffbuild/config.log
+  exit 1
+fi
 
 make
 # No "make install" for ffmpeg.
