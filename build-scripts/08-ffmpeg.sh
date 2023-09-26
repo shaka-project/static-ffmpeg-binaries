@@ -27,7 +27,7 @@ if [[ "$RUNNER_OS" == "Linux" ]]; then
   export LDFLAGS="-static"
 
   # Enable platform-specific hardware acceleration.
-  PLATFORM_CONFIGURE_FLAGS="--enable-nvenc --enable-vdpau"
+  PLATFORM_CONFIGURE_FLAGS="--enable-vdpau"
 elif [[ "$RUNNER_OS" == "macOS" ]]; then
   export CFLAGS="-static"
   # You can't do a _truly_ static build on macOS except the kernel.
