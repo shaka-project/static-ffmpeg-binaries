@@ -50,6 +50,26 @@ FFmpeg version, the next release would be "n4.4-2".  When FFmpeg n4.5 is
 released upstream, we could update to that and then tag "n4.5-1".
 
 
+# Local builds
+
+You can do these steps on your actual device, or on a virtual device or
+container to avoid polluting your system.
+
+1. Set up a build environment (packages, tools, etc) similar to what is done in
+   the [workflow source][workflow] for your OS.
+2. If you are using Linux or macOS, run `export SUDO=sudo`.
+3. If you are using Linux, run `export RUNNER_OS=Linux`.
+4. If you are using macOS, run `export RUNNER_OS=macOS`.
+5. If you are using Linux, run `export RUNNER_OS=Windows`.
+6. Create a build folder.  For example, `mkdir -p build`.  It does not need to
+   be in the git working directory.
+7. Change into that build directory.
+8. Create a symlink to the repo root called `repo-src` to emulate the structure
+   used by the workflow.  For example, if `build` is inside the repo, use
+   `ln -s ../ repo-src`.
+9. Run the build scripts in [`build-scripts`][] in numerical order.
+
+
 [releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
 [workflow]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/release.yaml
 [api-client]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/api-client/main.js
