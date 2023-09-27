@@ -46,16 +46,15 @@ defaults:
     shell: bash
 
 jobs:
-  # Configure the build matrix based on inputs.  The list of objects in the
-  # build matrix contents can't be changed by conditionals, but it can be
+  # Configure the build matrix based on repo variables.  The list of objects in
+  # the build matrix contents can't be changed by conditionals, but it can be
   # computed by another job and deserialized.  This uses
-  # env.ENABLE_SELF_HOSTED to determine the build matrix, based on the
+  # vars.ENABLE_SELF_HOSTED to determine the build matrix, based on the
   # metadata in build-matrix.json.
   matrix_config:
     runs-on: ubuntu-latest
     outputs:
       MATRIX: ${{ steps.configure.outputs.MATRIX }}
-      ENABLE_DEBUG: ${{ steps.configure.outputs.ENABLE_DEBUG }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,8 +65,8 @@ jobs:
         shell: node {0}
         run: |
           const fs = require('fs');
-          const enableDebug = "${{ env.ENABLE_DEBUG }}" != '';
-          const enableSelfHosted = "${{ env.ENABLE_SELF_HOSTED }}" != '';
+          const enableDebug = "${{ vars.ENABLE_DEBUG }}" != '';
+          const enableSelfHosted = "${{ vars.ENABLE_SELF_HOSTED }}" != '';
 
           // Use ENABLE_SELF_HOSTED to decide what the build matrix below
           // should include.
@@ -85,7 +84,7 @@ jobs:
               `ENABLE_DEBUG=${ enableDebug }\n`);
 
           // Log the outputs, for the sake of debugging this script.
-          console.log({enableDebug, matrix});
+          console.log({enableDebug, enableSelfHosted, matrix});
 
   # On several different hosts, build ffmpeg's dependencies, then ffmpeg itself.
   # The deps are all built as static libraries.
@@ -284,4 +283,4 @@ jobs:
         uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
-        if: failure() && env.ENABLE_DEBUG != ''
+        if: failure() && vars.ENABLE_DEBUG != ''
