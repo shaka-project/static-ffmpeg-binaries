@@ -13,12 +13,13 @@
 # limitations under the License.
 
 # A workflow to build fresh binaries.
-name: Build
-
-# Runs when called from another workflow, such as the release or test workflows.
 # Builds ffmpeg and ffprobe on all OS & CPU combinations, then optionally
 # attaches them to a release.
+name: Build
+
 on:
+  # Runs when called from another workflow, such as the release or test
+  # workflows.
   workflow_call:
     inputs:
       release_id:
@@ -36,6 +37,10 @@ on:
         required: true
       ENABLE_SELF_HOSTED:
         required: true
+
+  # Runs on manual trigger.
+  workflow_dispatch:
+
 
 # NOTE: The versions of the software we build are stored in versions.txt.
 
