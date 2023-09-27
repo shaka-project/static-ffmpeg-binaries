@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh svt-av1)
+tag=$(repo-src/get-version.sh svt-av1)
 git clone --depth 1 https://gitlab.com/AOMediaCodec/SVT-AV1 -b "$tag"
 
 mkdir SVT-AV1-build

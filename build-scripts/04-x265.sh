@@ -17,7 +17,7 @@
 set -e
 set -x
 
-tag=$(repo-src/.github/workflows/get-version.sh x265)
+tag=$(repo-src/get-version.sh x265)
 git clone --depth 1 https://bitbucket.org/multicoreware/x265_git.git -b "$tag"
 cd x265_git/build
 

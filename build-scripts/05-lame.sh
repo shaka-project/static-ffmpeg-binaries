@@ -17,7 +17,7 @@
 set -e
 set -x
 
-version=$(repo-src/.github/workflows/get-version.sh lame)
+version=$(repo-src/get-version.sh lame)
 curl -L -o lame-"$version".tar.gz https://sourceforge.net/projects/lame/files/lame/"$version"/lame-"$version".tar.gz/download
 tar xzf lame-"$version".tar.gz
 cd lame-"$version"

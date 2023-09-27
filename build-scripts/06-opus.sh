@@ -17,7 +17,7 @@
 set -e
 set -x
 
-version=$(repo-src/.github/workflows/get-version.sh opus)
+version=$(repo-src/get-version.sh opus)
 curl -LO https://archive.mozilla.org/pub/opus/opus-"$version".tar.gz
 tar xzf opus-"$version".tar.gz
 cd opus-"$version"
