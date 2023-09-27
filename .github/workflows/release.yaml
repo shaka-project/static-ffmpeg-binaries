@@ -23,9 +23,9 @@ on:
     tags:
       - "*"
 
-# NOTE: Set the repository secret ENABLE_DEBUG to enable debugging via tmate on
+# NOTE: Set the repository variable ENABLE_DEBUG to enable debugging via tmate on
 # failure.
-# NOTE: Set the repository secret ENABLE_SELF_HOSTED to enable self-hosted
+# NOTE: Set the repository variable ENABLE_SELF_HOSTED to enable self-hosted
 # runners such as linux-arm64.  This is set on the official repo, but forks
 # will have to opt in after setting up their own self-hosted runners.
 
@@ -54,8 +54,8 @@ jobs:
           # Create a draft release associated with the tag that triggered this
           # workflow.
           tag="${{ github.ref }}"
-          (cd repo-src/.github/workflows/api-client && npm ci)
-          release_id=$(node ./repo-src/.github/workflows/api-client/main.js draft-release "$tag")
+          (cd repo-src/api-client && npm ci)
+          release_id=$(node ./repo-src/api-client/main.js draft-release "$tag")
           echo "::set-output name=release_id::$release_id"
 
   build:
@@ -65,8 +65,6 @@ jobs:
       release_id: ${{ needs.draft_release.outputs.release_id }}
     secrets:
       TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      ENABLE_DEBUG: ${{ secrets.ENABLE_DEBUG }}
-      ENABLE_SELF_HOSTED: ${{ secrets.ENABLE_SELF_HOSTED }}
 
   publish_release:
     name: Publish release
@@ -104,13 +102,13 @@ jobs:
           # Update the release notes with this preliminary version.  This is
           # what gets emailed out when we publish the release below.
           release_id="${{ needs.draft_release.outputs.release_id }}"
-          (cd repo-src/.github/workflows/api-client && npm ci)
-          node ./repo-src/.github/workflows/api-client/main.js \
+          (cd repo-src/api-client && npm ci)
+          node ./repo-src/api-client/main.js \
             update-release-body "$release_id" "$(cat body.txt)"
 
           # Now we have to take the release out of draft mode.  Until we do, we
           # can't get download URLs for the assets.
-          node ./repo-src/.github/workflows/api-client/main.js \
+          node ./repo-src/api-client/main.js \
             publish-release "$release_id"
 
           # The downloads are sometimes a bit flaky (responding with 404) if we
@@ -119,7 +117,7 @@ jobs:
           sleep 30
 
           # Next, download the assets.
-          node ./repo-src/.github/workflows/api-client/main.js \
+          node ./repo-src/api-client/main.js \
             download-all-assets "$release_id" assets/
 
           # Now add the MD5 sums to the release notes.
@@ -128,5 +126,5 @@ jobs:
 
           # Now update the release notes one last time, with the MD5 sums
           # appended.
-          node ./repo-src/.github/workflows/api-client/main.js \
+          node ./repo-src/api-client/main.js \
             update-release-body "$release_id" "$(cat body.txt)"
