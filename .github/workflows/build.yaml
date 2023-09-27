@@ -30,13 +30,6 @@ on:
       # So we call our secret parameter simply TOKEN.
       TOKEN:
         required: false
-      # These below are not actual secrets, but secrets are the only place to
-      # keep repo-specific configs that make this project friendlier to forks
-      # and easier to debug.
-      ENABLE_DEBUG:
-        required: true
-      ENABLE_SELF_HOSTED:
-        required: true
 
   # Runs on manual trigger.
   workflow_dispatch:
@@ -56,7 +49,7 @@ jobs:
   # Configure the build matrix based on inputs.  The list of objects in the
   # build matrix contents can't be changed by conditionals, but it can be
   # computed by another job and deserialized.  This uses
-  # secrets.ENABLE_SELF_HOSTED to determine the build matrix, based on the
+  # env.ENABLE_SELF_HOSTED to determine the build matrix, based on the
   # metadata in build-matrix.json.
   matrix_config:
     runs-on: ubuntu-latest
@@ -73,8 +66,8 @@ jobs:
         shell: node {0}
         run: |
           const fs = require('fs');
-          const enableDebug = "${{ secrets.ENABLE_DEBUG }}" != '';
-          const enableSelfHosted = "${{ secrets.ENABLE_SELF_HOSTED }}" != '';
+          const enableDebug = "${{ env.ENABLE_DEBUG }}" != '';
+          const enableSelfHosted = "${{ env.ENABLE_SELF_HOSTED }}" != '';
 
           // Use ENABLE_SELF_HOSTED to decide what the build matrix below
           // should include.
@@ -291,7 +284,4 @@ jobs:
         uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
-        # NOTE: You cannot refer to secrets directly here when this workflow is
-        # called from another.
-        # NOTE: The ENABLE_DEBUG flag has been converted into "true" or "false".
-        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG == 'true'
+        if: failure() && env.ENABLE_DEBUG != ''
