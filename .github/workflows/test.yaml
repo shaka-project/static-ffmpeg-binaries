@@ -35,5 +35,17 @@ concurrency:
 # will have to opt in after setting up their own self-hosted runners.
 
 jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug
+        run: |
+          echo 'vars: ${{ toJSON(vars) }}'
+          echo 'env: ${{ toJSON(env) }}'
+          echo 'runner: ${{ toJSON(runner) }}'
+          echo 'github: ${{ toJSON(github) }}'
+          echo 'job: ${{ toJSON(job) }}'
+
   build:
+    needs: debug
     uses: ./.github/workflows/build.yaml

@@ -67,6 +67,11 @@ jobs:
           const fs = require('fs');
           const enableDebug = "${{ vars.ENABLE_DEBUG }}" != '';
           const enableSelfHosted = "${{ vars.ENABLE_SELF_HOSTED }}" != '';
+          console.log({
+            vars: '${{ toJSON(vars) }}',
+            env: '${{ toJSON(env) }}',
+            inputs: '${{ toJSON(inputs) }}',
+          });
 
           // Use ENABLE_SELF_HOSTED to decide what the build matrix below
           // should include.
