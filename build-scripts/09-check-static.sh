@@ -26,11 +26,10 @@ if [[ "$RUNNER_OS" == "Linux" ]]; then
   ldd ffprobe && exit 1
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # These will still be dynamic executables.
-  # Capture the full list of DLL dependencies, then log it for debugging.
+  # Capture the full list of DLL dependencies.
+  # With set -x, this also gets logged.
   ffmpeg_deps=$(ldd ffmpeg.exe)
   ffprobe_deps=$(ldd ffprobe.exe)
-  echo "$ffmpeg_deps"
-  echo "$ffprobe_deps"
 
   # These should not link against anything outside of /c/Windows.  The grep
   # command will succeed if it can find anything outside /c/Windows, and then
@@ -39,12 +38,10 @@ elif [[ "$RUNNER_OS" == "Windows" ]]; then
   echo "$ffprobe_deps" | grep -qvi /c/Windows/ && exit 1
 elif [[ "$RUNNER_OS" == "macOS" ]]; then
   # These will still be dynamic executables.
-  # Capture the full list of dynamic library dependencies, the log it for
-  # debugging.
+  # Capture the full list of dynamic library dependencies.
+  # With set -x, this also gets logged.
   ffmpeg_deps=$(otool -L ffmpeg)
   ffprobe_deps=$(otool -L ffprobe)
-  echo "$ffmpeg_deps"
-  echo "$ffprobe_deps"
 
   # These should not link against anything outside of /usr/lib or
   # /System/Library.  The grep command will succeed if it can find anything
