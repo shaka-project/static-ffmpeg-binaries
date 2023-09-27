@@ -17,30 +17,17 @@
 set -e
 set -x
 
-version=$(repo-src/get-version.sh opus)
-curl -LO https://archive.mozilla.org/pub/opus/opus-"$version".tar.gz
-tar xzf opus-"$version".tar.gz
-cd opus-"$version"
+tag=$(repo-src/get-version.sh opus)
+git clone --depth 1 https://github.com/xiph/opus -b "$tag"
+cd opus
 
-# On Windows, we can't link later if we build with -D_FORTIFY_SOURCE
-# now.  But there is no configure option for this, so we edit the
-# configure script instead.
-sed -e 's/-D_FORTIFY_SOURCE=2//' -i.bk configure
-
-# On Windows, somehow prefix defaults to / instead of /usr/local, but
-# only on some projects.  No idea why that is the default on Windows,
-# but --prefix=/usr/local fixes it.
-# On Windows, we also need to disable-stack-protector.
-./configure \
-  --prefix=/usr/local \
-  --disable-extra-programs \
-  --disable-stack-protector \
-  --enable-static \
-  --disable-shared
+cmake . \
+  -DOPUS_BUILD_SHARED_LIBRARY=OFF \
+  -DOPUS_BUILD_FRAMEWORK=OFF \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DOPUS_BUILD_TESTING=OFF \
+  -DBUILD_TESTING=OFF \
+  -DOPUS_BUILD_PROGRAMS=OFF
 
 make
 $SUDO make install
-
-# The pkgconfig linker flags for static opus don't work when ffmpeg
-# checks for opus in configure.  Linking libm after libopus fixes it.
-$SUDO sed -e 's/-lopus/-lopus -lm/' -i.bk /usr/local/lib/pkgconfig/opus.pc
