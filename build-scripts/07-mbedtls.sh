@@ -22,13 +22,14 @@ git clone --depth 1 https://github.com/ARMmbed/mbedtls.git -b "$tag"
 
 cd mbedtls
 
-# This flag is needed when building on Windows.
-if [[ "$RUNNER_OS" == "Windows" ]]; then
-  export WINDOWS_BUILD=1
-  export CC=gcc
-fi
+# NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+# to c:\Program Files.
+cmake . \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DENABLE_PROGRAMS=OFF \
+  -DUNSAFE_BUILD=OFF \
+  -DGEN_FILES=OFF \
+  -DENABLE_TESTING=OFF
 
-# NOTE: The library is built statically unless SHARED environment
-# variable is set.
-make no_test
+make
 $SUDO make install

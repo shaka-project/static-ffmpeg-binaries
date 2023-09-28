@@ -21,7 +21,10 @@ tag=$(repo-src/get-version.sh opus)
 git clone --depth 1 https://github.com/xiph/opus -b "$tag"
 cd opus
 
+# NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
+# to c:\Program Files.
 cmake . \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
   -DOPUS_BUILD_SHARED_LIBRARY=OFF \
   -DOPUS_BUILD_FRAMEWORK=OFF \
   -DBUILD_SHARED_LIBS=OFF \
