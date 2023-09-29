@@ -72,7 +72,7 @@ container to avoid polluting your system.
 
 [releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
 [workflow]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/release.yaml
-[api-client]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/.github/workflows/api-client/main.js
+[api-client]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/api-client/main.js
 [version-script]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/get-version.sh
 [version-file]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/versions.txt
 [apache]: https://github.com/shaka-project/static-ffmpeg-binaries/blob/main/LICENSE

@@ -30,13 +30,6 @@ on:
       # So we call our secret parameter simply TOKEN.
       TOKEN:
         required: false
-      # These below are not actual secrets, but secrets are the only place to
-      # keep repo-specific configs that make this project friendlier to forks
-      # and easier to debug.
-      ENABLE_DEBUG:
-        required: true
-      ENABLE_SELF_HOSTED:
-        required: true
 
   # Runs on manual trigger.
   workflow_dispatch:
@@ -53,32 +46,32 @@ defaults:
     shell: bash
 
 jobs:
-  # Configure the build matrix based on inputs.  The list of objects in the
-  # build matrix contents can't be changed by conditionals, but it can be
+  # Configure the build matrix based on repo variables.  The list of objects in
+  # the build matrix contents can't be changed by conditionals, but it can be
   # computed by another job and deserialized.  This uses
-  # secrets.ENABLE_SELF_HOSTED to determine the build matrix, based on the
+  # vars.ENABLE_SELF_HOSTED to determine the build matrix, based on the
   # metadata in build-matrix.json.
   matrix_config:
     runs-on: ubuntu-latest
     outputs:
       MATRIX: ${{ steps.configure.outputs.MATRIX }}
-      ENABLE_DEBUG: ${{ steps.configure.outputs.ENABLE_DEBUG }}
     steps:
       - uses: actions/checkout@v4
         with:
           path: repo-src
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.event.push.head }}
 
       - name: Configure Build Matrix
         id: configure
         shell: node {0}
         run: |
           const fs = require('fs');
-          const enableDebug = "${{ secrets.ENABLE_DEBUG }}" != '';
-          const enableSelfHosted = "${{ secrets.ENABLE_SELF_HOSTED }}" != '';
+          const enableDebug = "${{ vars.ENABLE_DEBUG }}" != '';
+          const enableSelfHosted = "${{ vars.ENABLE_SELF_HOSTED }}" != '';
 
           // Use ENABLE_SELF_HOSTED to decide what the build matrix below
           // should include.
-          const {hosted, selfHosted} = require("${{ github.workspace }}/repo-src/.github/workflows/build-matrix.json");
+          const {hosted, selfHosted} = require("${{ github.workspace }}/repo-src/build-matrix.json");
           const matrix = enableSelfHosted ? hosted.concat(selfHosted) : hosted;
 
           // Output a JSON object consumed by the build matrix below.
@@ -92,7 +85,7 @@ jobs:
               `ENABLE_DEBUG=${ enableDebug }\n`);
 
           // Log the outputs, for the sake of debugging this script.
-          console.log({enableDebug, matrix});
+          console.log({enableDebug, enableSelfHosted, matrix});
 
   # On several different hosts, build ffmpeg's dependencies, then ffmpeg itself.
   # The deps are all built as static libraries.
@@ -112,71 +105,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: repo-src
-
-      - name: Install Linux packages
-        if: runner.os == 'Linux'
-        run: |
-          set -e
-          set -x
-
-          # Install missing packages on Linux.
-          # TODO: Some of these are already on GitHub's VMs, but not our
-          # self-hosted runner.  Try to make the self-hosted runner image more
-          # compatible with what GitHub offers by default.
-          sudo apt -y update
-          sudo apt -y upgrade
-          sudo apt -y install \
-            cmake \
-            curl \
-            nasm \
-            npm \
-            pkg-config \
-            yasm \
-            libffmpeg-nvenc-dev \
-            libvdpau-dev
-
-          # Use sudo in install commands on Linux.
-          echo "SUDO=sudo" >> "$GITHUB_ENV"
-
-      - name: Install macOS packages
-        if: runner.os == 'macOS'
-        run: |
-          set -e
-          set -x
-
-          # Use homebrew to install missing packages on mac.
-          brew install \
-            md5sha1sum \
-            nasm \
-            yasm
-
-          # Unlink pre-installed homebrew packages that conflict with our
-          # static library builds below.  They are still installed, but will no
-          # longer be symlinked into default library paths, and the ffmpeg
-          # build will not pick up pre-installed shared libraries we don't want.
-          # Only our static versions will be used.  The list of preinstalled
-          # packages in the GitHub Actions environment may change over time, so
-          # this list may need to change, as well.  Ignore errors if one of
-          # these is not installed.
-          for i in \
-            aom \
-            lame \
-            libvpx \
-            libx11 \
-            libxau \
-            libxcb \
-            libxdmcp \
-            mbedtls \
-            opus \
-            opusfile \
-            svt-av1 \
-            x264 \
-            x265 \
-            xz \
-          ; do brew unlink $i || true; done
-
-          # Use sudo in install commands on macOS.
-          echo "SUDO=sudo" >> "$GITHUB_ENV"
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.event.push.head }}
 
       - name: Add msys2 to the Windows path
         if: runner.os == 'Windows'
@@ -187,42 +116,8 @@ jobs:
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
 
-      - name: Install Windows packages
-        if: runner.os == 'Windows'
-        run: |
-          set -e
-          set -x
-
-          # Install msys packages we will need.
-          # NOTE: Add tools to this list if you see errors like
-          # "shared_info::initialize: size of shared memory region changed".
-          # The tools reporting such errors need to be explicitly replaced by
-          # msys versions.  The list of preinstalled packages in the GitHub
-          # Actions environment may change over time, so this list may need to
-          # change, as well.
-          # NOTE: pkg-config specifically must be installed because of
-          # https://github.com/actions/runner-images/issues/5459, in which
-          # there is a conflicting version that GitHub will not remove.
-          # NOTE: mingw-w64-x86_64-gcc must be installed because of conflicting
-          # GCC toolchains installed with Strawberry Perl, Git, and one more
-          # through Chocolatey.  None of these build clean executables that
-          # only depend on standard DLLs.
-          pacman -Sy --noconfirm \
-            diffutils \
-            git \
-            make \
-            mingw-w64-x86_64-gcc \
-            nasm \
-            patch \
-            pkg-config \
-            yasm
-
-          # Make sure that cmake generates makefiles and not ninja files.
-          echo "CMAKE_GENERATOR=MSYS Makefiles" >> "$GITHUB_ENV"
-
-          # Make sure that pkg-config searches the path where we will install
-          # things.
-          echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> "$GITHUB_ENV"
+      - name: Install OS packages
+        run: ./repo-src/build-scripts/00-packages.sh
 
       - name: Install libvpx
         run: ./repo-src/build-scripts/01-libvpx.sh
@@ -289,15 +184,12 @@ jobs:
           # over to collect them all and use their MD5 sums to create the
           # release notes (the "body" of the release).
           release_id="${{ inputs.release_id }}"
-          (cd ./repo-src/.github/workflows/api-client && npm ci)
-          node ./repo-src/.github/workflows/api-client/main.js \
+          (cd ./repo-src/api-client && npm ci)
+          node ./repo-src/api-client/main.js \
             upload-all-assets "$release_id" assets/
 
       - name: Debug
         uses: mxschmitt/action-tmate@v3.6
         with:
           limit-access-to-actor: true
-        # NOTE: You cannot refer to secrets directly here when this workflow is
-        # called from another.
-        # NOTE: The ENABLE_DEBUG flag has been converted into "true" or "false".
-        if: failure() && needs.matrix_config.outputs.ENABLE_DEBUG == 'true'
+        if: failure() && vars.ENABLE_DEBUG != ''
