@@ -23,10 +23,10 @@ cd libvpx
 
 # NOTE: disabling unit tests and examples significantly reduces build
 # time (by 80% as tested on a Jetson Nano)
+# NOTE: --enable-runtime-cpu-detect fails on macOS arm64.
 ./configure \
   --enable-vp8 \
   --enable-vp9 \
-  --enable-runtime-cpu-detect \
   --disable-unit-tests \
   --disable-examples \
   --enable-static \

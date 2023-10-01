@@ -22,6 +22,11 @@ git clone --depth 1 https://github.com/ARMmbed/mbedtls.git -b "$tag"
 
 cd mbedtls
 
+# Remove some compiler flags that cause build failures on macOS arm64.  This
+# can't be done through CMake variables, so we have to patch the source.
+sed -e 's/-Wdocumentation//' -e 's/-Wno-documentation-deprecated-sync//' \
+  -i.bk library/CMakeLists.txt
+
 # NOTE: without CMAKE_INSTALL_PREFIX on Windows, files are installed
 # to c:\Program Files.
 cmake . \
