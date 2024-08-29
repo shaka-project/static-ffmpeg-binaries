@@ -100,13 +100,14 @@ jobs:
 
     name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
     runs-on: ${{ matrix.os }}
+    container:
+      image: ${{ matrix.container }}
+      # Access to the host filesystem is required to patch the environment for
+      # Alpine Linux support.  See the first Alpine step below for details.
+      volumes:
+        - /:/host
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          path: repo-src
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.event.push.head }}
-
       - name: Add msys2 to the Windows path
         if: runner.os == 'Windows'
         run: |
@@ -115,6 +116,38 @@ jobs:
           # mxschmitt/action-tmate.
           echo "C:\\msys64\\usr\\bin" >> "$GITHUB_PATH"
           echo "C:\\msys64\\mingw64\\bin" >> "$GITHUB_PATH"
+
+      # This is how we convince GitHub Actions Runner to run an Alpine Linux
+      # container.  We have to mask the fact that it's Alpine, install NodeJS,
+      # then patch the Alpine version of NodeJS in over the one that ships with
+      # GitHub Actions.  This is because GitHub doesn't officially support
+      # Alpine and because they hard-code the path to NodeJS in Node-based
+      # actions.
+      # See https://github.com/actions/runner/issues/801#issuecomment-2394425757
+      - name: Patch native Alpine NodeJS into Runner environment
+        if: runner.os == 'Linux'
+        run: |
+          apk add nodejs
+          sed -i "s:^ID=alpine:ID=NotpineForGHA:" /etc/os-release
+          # The first path here is for GitHub-hosted workflows, while the
+          # second path is correct for our self-hosted workflows using the
+          # myoung34/github-runner container.  The commands that follow this
+          # are correct so long as one of these paths exists.
+          cd /host/home/runner/runners/*/externals/ || cd /host/actions-runner/externals
+          rm -rf node20/*
+          mkdir node20/bin
+          ln -s /usr/bin/node node20/bin/node
+        shell: sh  # No bash in Alpine by default
+
+      - name: Install Alpine Linux deps
+        if: runner.os == 'Linux'
+        run: apk add bash npm sudo
+        shell: sh  # No bash in Alpine until after this command
+
+      - uses: actions/checkout@v4
+        with:
+          path: repo-src
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.event.push.head }}
 
       - name: Install OS packages
         run: ./repo-src/build-scripts/00-packages.sh

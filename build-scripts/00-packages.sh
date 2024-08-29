@@ -20,19 +20,39 @@ set -x
 if [[ "$RUNNER_OS" == "Linux" ]]; then
   # Install missing packages on Linux.
   #
-  # NOTE: Some of these are already on GitHub's VMs, but not our self-hosted
-  # runners.
-  sudo apt -y update
-  sudo apt -y upgrade
-  sudo apt -y install \
-    cmake \
-    curl \
-    nasm \
-    npm \
-    pkg-config \
-    yasm \
-    libffmpeg-nvenc-dev \
-    libvdpau-dev
+  # NOTE: In order to get a musl-based static build, we run our automated
+  # builds inside an Alpine Linux container, not directly on GitHub's Ubuntu
+  # VMs.
+  if repo-src/is-alpine.sh; then
+    sudo apk update
+    sudo apk upgrade
+    sudo apk add \
+      cmake \
+      curl \
+      diffutils \
+      g++ \
+      git \
+      libvdpau-dev \
+      linux-headers \
+      make \
+      nasm \
+      patch \
+      perl \
+      pkgconfig \
+      yasm
+  else
+    # This can be used by the developer on Ubuntu.  The builds may or may not
+    # work portably on other platforms.
+    sudo apt -y update
+    sudo apt -y upgrade
+    sudo apt -y install \
+      cmake \
+      curl \
+      libvdpau-dev \
+      nasm \
+      pkg-config \
+      yasm
+  fi
 
   # Use sudo in install commands on Linux.
   echo "SUDO=sudo" >> "$GITHUB_ENV"

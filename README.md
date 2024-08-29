@@ -29,8 +29,11 @@ and you can verify that they haven't been tampered with.  The sums in the
 workflow logs, release notes, and the binaries should all match.
 You can read the details in the [workflow source][workflow].
 
-No third-party GitHub Actions have been used in this workflow, to protect
-against supply-chain attacks.
+Minimal third-party GitHub Actions have been used in this workflow, to protect
+against supply-chain attacks.  The following actions are used:
+
+ - mxschmitt/action-tmate: Used only on failure to debug failed builds, and
+   only if debug is configured at the repo level.
 
 
 # Triggering a build
