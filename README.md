@@ -64,13 +64,24 @@ container to avoid polluting your system.
 3. If you are using Linux, run `export RUNNER_OS=Linux`.
 4. If you are using macOS, run `export RUNNER_OS=macOS`.
 5. If you are using Linux, run `export RUNNER_OS=Windows`.
-6. Create a build folder.  For example, `mkdir -p build`.  It does not need to
+6. Set a temp path for `GITHUB_ENV`, for example `export GITHUB_ENV=/tmp/github.env`.
+7. Create a build folder.  For example, `mkdir -p build`.  It does not need to
    be in the git working directory.
-7. Change into that build directory.
-8. Create a symlink to the repo root called `repo-src` to emulate the structure
+8. Change into that build directory.
+9. Create a symlink to the repo root called `repo-src` to emulate the structure
    used by the workflow.  For example, if `build` is inside the repo, use
    `ln -s ../ repo-src`.
-9. Run the build scripts in [`build-scripts`][] in numerical order.
+10. Run the build scripts in [`build-scripts`][] in numerical order.
+
+
+# Docker builds
+
+You can run the above steps automatically in an Ubuntu Docker container with:
+
+```sh
+docker build -t static-ffmpeg-binaries /path/to/static-ffmpeg-binaries
+docker run -v /path/to/static-ffmpeg-binaries:/src static-ffmpeg-binaries /src/build.sh
+```
 
 
 [releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
