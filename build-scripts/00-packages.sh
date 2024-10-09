@@ -46,12 +46,13 @@ if [[ "$RUNNER_OS" == "Linux" ]]; then
     sudo apt -y update
     sudo apt -y upgrade
     sudo apt -y install \
+      clang \
       cmake \
       curl \
       g++ \
       git \
       libffmpeg-nvenc-dev \
-      libvdpau-dev \
+      libva-dev \
       make \
       nasm \
       npm \
