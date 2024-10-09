@@ -20,10 +20,16 @@ set -x
 cd ffmpeg
 
 if [[ "$RUNNER_OS" == "Linux" ]]; then
-  # If ldd succeeds, then these are dynamic executables, so we fail
-  # this step if ldd succeeds.  The output of ldd will still be logged.
-  ldd ffmpeg && exit 1
-  ldd ffprobe && exit 1
+  # We only check for static binaries on Alpine Linux.  In other distributions,
+  # these are not possible due to the use of glibc.  We allow glibc builds here
+  # because while tied to the distro, they at least give us the chance for
+  # hardware encoding.
+  if ../repo-src/is-alpine.sh; then
+    # If ldd succeeds, then these are dynamic executables, so we fail
+    # this step if ldd succeeds.  The output of ldd will still be logged.
+    ldd ffmpeg && exit 1
+    ldd ffprobe && exit 1
+  fi
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # These will still be dynamic executables.
   # Capture the full list of DLL dependencies.

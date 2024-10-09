@@ -23,11 +23,27 @@ cd ffmpeg
 
 # Set some OS-specific environment variables and flags.
 if [[ "$RUNNER_OS" == "Linux" ]]; then
-  export CFLAGS="-static"
-  export LDFLAGS="-static"
+  if ../repo-src/is-alpine.sh; then
+    # Truly static builds are only possible in musl-based Alpine Linux.
+    # Go for a completely static binary, but this prevents the use of hardware
+    # acceleration.
+    export CFLAGS="-static"
+    export LDFLAGS="-static"
+  else
+    # We can't build a truly static binary, so we might as well enable hardware
+    # acceleration, which uses dynamic libraries and will depend heavily on the
+    # OS distribution.
+    PLATFORM_CONFIGURE_FLAGS="--enable-vaapi --enable-nvenc"
+    # TODO: Is AMF an option for us in this context?
 
-  # Enable platform-specific hardware acceleration.
-  PLATFORM_CONFIGURE_FLAGS="--enable-vdpau"
+    # This version of ffmpeg will accept NVEnc 11.5.1.3+, but not Ubuntu
+    # 22.04's packaged version, 11.5.1.1.  This patch makes it flexible enough
+    # to build with the older NVEnc version in Ubuntu Jammy.
+    # For code archaeologists, the commits that set the minimum beyond 11.5.1.1
+    # were https://github.com/ffmpeg/ffmpeg/commit/5c288a44 (released in n6.0)
+    # and https://github.com/ffmpeg/ffmpeg/commit/05f8b2ca (released in n6.1).
+    patch -p1 -i ../repo-src/ffmpeg-nvenc-jammy.patch
+  fi
 elif [[ "$RUNNER_OS" == "macOS" ]]; then
   export CFLAGS="-static"
   # You can't do a _truly_ static build on macOS except the kernel.
@@ -36,11 +52,10 @@ elif [[ "$RUNNER_OS" == "macOS" ]]; then
   # Enable platform-specific hardware acceleration.
   PLATFORM_CONFIGURE_FLAGS="--enable-videotoolbox"
 
-  # Disable x86 ASM on macOS.  It fails to build with an error about
-  # how macho64 format can't contain 32-bit assembly.  I'm not sure
-  # how else to resolve this, and from my searches, it appears that
-  # others are not having this problem with ffmpeg.  This is still a problem
-  # with n6.0.
+  # Disable x86 ASM on macOS.  It fails to build with an error about "32-bit
+  # absolute addressing is not supported in 64-bit mode".  I'm not sure how
+  # else to resolve this, and from my searches, it appears that others are not
+  # having this problem with ffmpeg.  This is still a problem with n7.1
   PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # /usr/local/incude and /usr/local/lib are not in mingw's include
@@ -54,12 +69,6 @@ elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # building for that environment if we don't specify this.
   PLATFORM_CONFIGURE_FLAGS="--target-os=mingw64"
 fi
-
-# Install a patch from https://github.com/FFmpeg/FFmpeg/commit/effadce6 to
-# resolve the binutils error "operand type mismatch for shr" on Windows,
-# described in https://github.com/msys2/MINGW-packages/issues/17946
-wget https://github.com/FFmpeg/FFmpeg/commit/effadce6.patch
-patch -p1 -i effadce6.patch
 
 if ! ./configure \
     --pkg-config-flags="--static" \

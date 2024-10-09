@@ -98,7 +98,7 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.matrix_config.outputs.MATRIX) }}
 
-    name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }}
+    name: Build ${{ matrix.os_name }} ${{ matrix.target_arch }} ${{ matrix.container }}
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}
@@ -125,7 +125,7 @@ jobs:
       # actions.
       # See https://github.com/actions/runner/issues/801#issuecomment-2394425757
       - name: Patch native Alpine NodeJS into Runner environment
-        if: runner.os == 'Linux'
+        if: startsWith(matrix.container, 'alpine')
         run: |
           apk add nodejs
           sed -i "s:^ID=alpine:ID=NotpineForGHA:" /etc/os-release
@@ -140,9 +140,15 @@ jobs:
         shell: sh  # No bash in Alpine by default
 
       - name: Install Alpine Linux deps
-        if: runner.os == 'Linux'
+        if: startsWith(matrix.container, 'alpine')
         run: apk add bash npm sudo
         shell: sh  # No bash in Alpine until after this command
+
+      - name: Install Ubuntu Linux deps
+        if: startsWith(matrix.container, 'ubuntu')
+        # Sudo is needed by the first build script, but isn't in the default
+        # container image for Ubuntu.
+        run: apt -y update && apt -y upgrade && apt -y install sudo
 
       - uses: actions/checkout@v4
         with:
