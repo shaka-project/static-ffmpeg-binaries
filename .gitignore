@@ -1,0 +1,12 @@
+# These are created if you run the Dockerfile, since we mount this folder as
+# the home directory.
+.bash_history
+.sudo_as_admin_successful
+.wget-hsts
+
+# Editor swap files
+*~
+.*.sw*
+
+# A local build folder
+build
