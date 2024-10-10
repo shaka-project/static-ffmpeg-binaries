@@ -38,7 +38,9 @@ fi
 # supports Ubuntu as a container, for simplicity.
 if [[ $(id -u) == "0" ]]; then
   # If we're on Ubuntu before 24.04, there's no default "ubuntu" user.
-  # This maps these older versions to the starting state of 24.04+.
+  # Here we add the "ubuntu" group and the "ubuntu" user in that group,
+  # both with ID 1000.  This brings older versions, e.g. Ubuntu 22.04,
+  # to the starting state of Ubuntu 24.04+.
   groupadd -g 1000 ubuntu || true
   useradd -u 1000 -g 1000 -m -d /home/ubuntu ubuntu || true
 
