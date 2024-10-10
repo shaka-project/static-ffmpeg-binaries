@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-# Copyright 2021 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-set -x
+# Returns 0 if this is Alpine Linux.
 
-tag=$(repo-src/get-version.sh x264)
-git clone https://code.videolan.org/videolan/x264.git
-cd x264
-git checkout "$tag"
+OS_ID=$(cat /etc/os-release | grep ^ID= | cut -f 2 -d =)
+if [ "$OS_ID" = "alpine" -o "$OS_ID" = "NotpineForGHA" ]; then
+  # It is Alpine or the modified version we have to trick GitHub.
+  exit 0
+fi
 
-# NOTE: disable OpenCL-based features because it uses dlopen and can interfere
-# with static builds.
-./configure \
-  --disable-opencl \
-  --enable-static
-
-# Only build and install the static library.
-make libx264.a
-$SUDO make install-lib-static
+# It is not Alpine.
+exit 1

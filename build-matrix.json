@@ -3,6 +3,7 @@
   "hosted": [
     {
       "os": "ubuntu-latest",
+      "container": "alpine:3.20",
       "os_name": "linux",
       "target_arch": "x64",
       "exe_ext": ""
@@ -33,6 +34,7 @@
   "selfHosted": [
     {
       "os": "self-hosted-linux-arm64",
+      "container": "arm64v8/alpine:3.20",
       "os_name": "linux",
       "target_arch": "arm64",
       "exe_ext": ""
