@@ -174,7 +174,7 @@ jobs:
         run: ./repo-src/build-scripts/07-mbedtls.sh
 
       - name: Build ffmpeg and ffprobe
-        run: ./repo-src/build-scripts/08-ffmpeg.sh
+        run: ./repo-src/build-scripts/90-ffmpeg.sh
 
       - name: Prepare assets
         run: |
@@ -202,7 +202,7 @@ jobs:
           path: assets/*
 
       - name: Check that executables are static
-        run: ./repo-src/build-scripts/09-check-static.sh
+        run: ./repo-src/build-scripts/99-check-static.sh
 
       - name: Attach assets to release
         if: inputs.release_id != ''
