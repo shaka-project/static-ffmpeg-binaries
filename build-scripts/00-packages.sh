@@ -65,7 +65,7 @@ elif [[ "$RUNNER_OS" == "macOS" ]]; then
     x264 \
     x265 \
     xz \
-  ; do brew unlink $i || true; done
+  ; do brew unlink $i &>/dev/null || true; done
 
   # Use sudo in install commands on macOS.
   echo "SUDO=sudo" >> "$GITHUB_ENV"
