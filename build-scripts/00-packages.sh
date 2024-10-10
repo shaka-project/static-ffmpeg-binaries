@@ -48,9 +48,15 @@ if [[ "$RUNNER_OS" == "Linux" ]]; then
     sudo apt -y install \
       cmake \
       curl \
+      g++ \
+      git \
+      libffmpeg-nvenc-dev \
       libvdpau-dev \
+      make \
       nasm \
+      npm \
       pkg-config \
+      wget \
       yasm
   fi
 
