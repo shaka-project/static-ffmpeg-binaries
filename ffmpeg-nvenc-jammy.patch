@@ -1,0 +1,48 @@
+FFmpeg n7.1 will accept NVEnc 11.5.1.3+, but not Ubuntu 22.04's packaged
+version, 11.5.1.1.  This patch makes it flexible enough to build with the older
+NVEnc version in Ubuntu Jammy.  For code archaeologists, the commits that set
+the minimum beyond 11.5.1.1 were
+https://github.com/ffmpeg/ffmpeg/commit/5c288a44 (released in n6.0) and
+https://github.com/ffmpeg/ffmpeg/commit/05f8b2ca (released in n6.1).
+
+
+diff --git a/configure b/configure
+index d77a55b653..c28dcffbb0 100755
+--- a/configure
++++ b/configure
+@@ -6761,7 +6761,7 @@ if ! disabled ffnvcodec; then
+     ffnv_hdr_list="ffnvcodec/nvEncodeAPI.h ffnvcodec/dynlink_cuda.h ffnvcodec/dynlink_cuviddec.h ffnvcodec/dynlink_nvcuvid.h"
+     check_pkg_config ffnvcodec "ffnvcodec >= 12.1.14.0" "$ffnv_hdr_list" "" || \
+       check_pkg_config ffnvcodec "ffnvcodec >= 12.0.16.1 ffnvcodec < 12.1" "$ffnv_hdr_list" "" || \
+-      check_pkg_config ffnvcodec "ffnvcodec >= 11.1.5.3 ffnvcodec < 12.0" "$ffnv_hdr_list" "" || \
++      check_pkg_config ffnvcodec "ffnvcodec >= 11.1.5.1 ffnvcodec < 12.0" "$ffnv_hdr_list" "" || \
+       check_pkg_config ffnvcodec "ffnvcodec >= 11.0.10.3 ffnvcodec < 11.1" "$ffnv_hdr_list" "" || \
+       check_pkg_config ffnvcodec "ffnvcodec >= 8.1.24.15 ffnvcodec < 8.2" "$ffnv_hdr_list" ""
+ fi
+@@ -7388,7 +7388,7 @@ int main(void) { return 0; }
+ EOF
+ 
+ if enabled nvenc; then
+-    check_type "ffnvcodec/nvEncodeAPI.h" "NV_ENC_PIC_PARAMS_AV1"
++    check_type "ffnvcodec/nvEncodeAPI.h" "NV_ENC_PIC_PARAMS_AV1" || add_cflags -DJAMMY
+ fi
+ 
+ if enabled_any nvdec cuvid; then
+diff --git a/libavutil/hwcontext_cuda.c b/libavutil/hwcontext_cuda.c
+index 3de3847399..0815360a46 100644
+--- a/libavutil/hwcontext_cuda.c
++++ b/libavutil/hwcontext_cuda.c
+@@ -363,11 +363,13 @@ static int cuda_context_init(AVHWDeviceContext *device_ctx, int flags) {
+                                                     hwctx->internal->cuda_device));
+         if (ret < 0)
+             return ret;
++#ifndef JAMMY
+     } else if (flags & AV_CUDA_USE_CURRENT_CONTEXT) {
+         ret = CHECK_CU(cu->cuCtxGetCurrent(&hwctx->cuda_ctx));
+         if (ret < 0)
+             return ret;
+         av_log(device_ctx, AV_LOG_INFO, "Using current CUDA context.\n");
++#endif
+     } else {
+         ret = CHECK_CU(cu->cuCtxCreate(&hwctx->cuda_ctx, desired_flags,
+                                        hwctx->internal->cuda_device));
