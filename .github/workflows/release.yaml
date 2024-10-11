@@ -95,7 +95,7 @@ jobs:
           echo "" >> body.txt
 
           echo "Software versions:" >> body.txt
-          cat repo-src/.github/workflows/versions.txt | \
+          cat repo-src/versions.txt | \
             sed -e 's/^/ - /' >> body.txt
           echo "" >> body.txt
 
