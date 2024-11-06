@@ -205,7 +205,7 @@ jobs:
       # This makes it possible to debug failures in the next step by
       # downloading binaries that fail the check for static linkage.
       - name: Upload assets as artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: binaries${{ env.SUFFIX }}
           path: assets/*
