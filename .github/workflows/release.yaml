@@ -42,6 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: repo-src
+          ref: ${{ github.ref }}
 
       - name: Draft release
         id: draft_release
@@ -63,6 +64,7 @@ jobs:
     uses: ./.github/workflows/build.yaml
     with:
       release_id: ${{ needs.draft_release.outputs.release_id }}
+      ref: ${{ github.ref }}
     secrets:
       TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -74,6 +76,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: repo-src
+          ref: ${{ github.ref }}
 
       - name: Publish release
         env:

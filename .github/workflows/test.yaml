@@ -27,7 +27,7 @@ on:
 # old one.  If a PR is updated and a new test run is started, the old test run
 # will be cancelled automatically to conserve resources.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
 # NOTE: Set the repository variable ENABLE_DEBUG to enable debugging via tmate
@@ -39,3 +39,5 @@ concurrency:
 jobs:
   build:
     uses: ./.github/workflows/build.yaml
+    with:
+      ref: refs/pull/${{ github.event.number }}/merge
