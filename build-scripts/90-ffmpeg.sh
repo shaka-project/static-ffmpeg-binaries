@@ -57,6 +57,9 @@ elif [[ "$RUNNER_OS" == "macOS" ]]; then
   # else to resolve this, and from my searches, it appears that others are not
   # having this problem with ffmpeg.  This is still a problem with n7.1
   PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --disable-x86asm --disable-inline-asm"
+
+  # Enable position independent code (PIC).  This resolved a crash on arm64.
+  PLATFORM_CONFIGURE_FLAGS="$PLATFORM_CONFIGURE_FLAGS --enable-pic"
 elif [[ "$RUNNER_OS" == "Windows" ]]; then
   # /usr/local/incude and /usr/local/lib are not in mingw's include
   # and linker paths by default, so add them.
