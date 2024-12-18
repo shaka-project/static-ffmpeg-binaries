@@ -55,6 +55,7 @@ jobs:
         with:
           path: repo-src
           ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
 
       - name: Configure Build Matrix
         id: configure
@@ -150,6 +151,7 @@ jobs:
         with:
           path: repo-src
           ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
 
       - name: Install OS packages
         run: ./repo-src/build-scripts/00-packages.sh
