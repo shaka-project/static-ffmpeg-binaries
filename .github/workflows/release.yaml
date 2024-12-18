@@ -30,53 +30,28 @@ on:
 # will have to opt in after setting up their own self-hosted runners.
 
 jobs:
-  # On a single Linux host, draft a release.  Later, different hosts will build
-  # for each OS/CPU in parallel, and then attach the resulting binaries to this
-  # draft.
-  draft_release:
-    name: Draft release
-    runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.draft_release.outputs.release_id }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: repo-src
-          ref: ${{ github.ref }}
-
-      - name: Draft release
-        id: draft_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          set -x
-
-          # Create a draft release associated with the tag that triggered this
-          # workflow.
-          tag="${{ github.ref }}"
-          (cd repo-src/api-client && npm ci)
-          release_id=$(node ./repo-src/api-client/main.js draft-release "$tag")
-          echo "::set-output name=release_id::$release_id"
-
   build:
-    needs: draft_release
     uses: ./.github/workflows/build.yaml
     with:
-      release_id: ${{ needs.draft_release.outputs.release_id }}
       ref: ${{ github.ref }}
-    secrets:
-      TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_release:
     name: Publish release
-    needs: [draft_release, build]
+    needs: [build]
     runs-on: ubuntu-latest
+    permissions:
+      # "Write" to contents is necessary to create a release.
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           path: repo-src
           ref: ${{ github.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
 
       - name: Publish release
         env:
@@ -93,8 +68,8 @@ jobs:
           echo " - $(date -I)" >> body.txt
           echo "" >> body.txt
 
-          echo "$GITHUB_REPOSITORY version:" >> body.txt
-          echo " - $repo_tag" >> body.txt
+          echo "${{ github.repository }} version:" >> body.txt
+          echo " - ${{ github.ref_name }}" >> body.txt
           echo "" >> body.txt
 
           echo "Software versions:" >> body.txt
@@ -102,32 +77,15 @@ jobs:
             sed -e 's/^/ - /' >> body.txt
           echo "" >> body.txt
 
-          # Update the release notes with this preliminary version.  This is
-          # what gets emailed out when we publish the release below.
-          release_id="${{ needs.draft_release.outputs.release_id }}"
-          (cd repo-src/api-client && npm ci)
-          node ./repo-src/api-client/main.js \
-            update-release-body "$release_id" "$(cat body.txt)"
-
-          # Now we have to take the release out of draft mode.  Until we do, we
-          # can't get download URLs for the assets.
-          node ./repo-src/api-client/main.js \
-            publish-release "$release_id"
-
-          # The downloads are sometimes a bit flaky (responding with 404) if we
-          # don't put some delay between publication and download.  This number
-          # is arbitrary, but experimentally, it seems to solve the issue.
-          sleep 30
-
-          # Next, download the assets.
-          node ./repo-src/api-client/main.js \
-            download-all-assets "$release_id" assets/
-
-          # Now add the MD5 sums to the release notes.
+          # Add the MD5 sums to the release notes.
           echo "MD5 sums:" >> body.txt
           (cd assets; md5sum * | sed -e 's/^/ - /') >> body.txt
 
-          # Now update the release notes one last time, with the MD5 sums
-          # appended.
-          node ./repo-src/api-client/main.js \
-            update-release-body "$release_id" "$(cat body.txt)"
+          # Publish the release, including release notes and assets.
+          gh release create \
+              -R ${{ github.repository }} \
+              --verify-tag \
+              --notes-file body.txt \
+              --title "${{ github.ref_name }}" \
+              "${{ github.ref_name }}" \
+              assets/*
