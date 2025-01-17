@@ -16,11 +16,9 @@
 name: Test
 
 # Runs when a PR is uploaded or revised.  Builds ffmpeg and ffprobe on all OS &
-# CPU combinations.  Uses pull_request_target rather than pull_request for
-# access to configuration variables.  Since no secrets are accessed or passed
-# to the build workflow, this is safe.  Only the release workflow uses secrets.
+# CPU combinations.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
 
 # If another instance of this workflow is started for the same PR, cancel the
@@ -30,14 +28,20 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
-# NOTE: Set the repository variable ENABLE_DEBUG to enable debugging via tmate
-# on failure.
-# NOTE: Set the repository variable ENABLE_SELF_HOSTED to enable self-hosted
-# runners such as linux-arm64.  This is set on the official repo, but forks
-# will have to opt in after setting up their own self-hosted runners.
+# NOTE: Create an environment called "debug" to enable debugging via tmate on
+# failure.
+# NOTE: Create an environment called "self_hosted" to enable self-hosted
+# runners from build-matrix.json.
 
 jobs:
+  settings:
+    name: Settings
+    uses: ./.github/workflows/settings.yaml
+
   build:
+    needs: settings
     uses: ./.github/workflows/build.yaml
     with:
       ref: refs/pull/${{ github.event.number }}/merge
+      self_hosted: ${{ needs.settings.outputs.self_hosted != '' }}
+      debug: ${{ needs.settings.outputs.debug != '' }}
