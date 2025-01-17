@@ -2,7 +2,7 @@
   "comment1": "runners hosted by GitHub, always enabled",
   "hosted": [
     {
-      "comment": "Alpine container for static Linux binaries",
+      "comment": "Alpine container for static Linux x64 binaries",
       "os": "ubuntu-latest",
       "container": "alpine:3.20",
       "os_name": "linux",
@@ -10,7 +10,7 @@
       "exe_ext": ""
     },
     {
-      "comment": "Ubuntu 24.04 with hardware acceleration",
+      "comment": "Ubuntu 24.04 x64 with hardware acceleration",
       "os": "ubuntu-latest",
       "container": "ubuntu:24.04",
       "os_name": "linux",
@@ -18,11 +18,35 @@
       "exe_ext": "-ubuntu-24.04"
     },
     {
-      "comment": "Ubuntu 22.04 with hardware acceleration",
+      "comment": "Ubuntu 22.04 x64 with hardware acceleration",
       "os": "ubuntu-latest",
       "container": "ubuntu:22.04",
       "os_name": "linux",
       "target_arch": "x64",
+      "exe_ext": "-ubuntu-22.04"
+    },
+    {
+      "comment": "Alpine container for static Linux arm64 binaries",
+      "os": "ubuntu-24.04-arm",
+      "container": "alpine:3.20",
+      "os_name": "linux",
+      "target_arch": "arm64",
+      "exe_ext": ""
+    },
+    {
+      "comment": "Ubuntu 24.04 arm64 with hardware acceleration",
+      "os": "ubuntu-24.04-arm",
+      "container": "ubuntu:24.04",
+      "os_name": "linux",
+      "target_arch": "arm64",
+      "exe_ext": "-ubuntu-24.04"
+    },
+    {
+      "comment": "Ubuntu 22.04 arm64 with hardware acceleration",
+      "os": "ubuntu-24.04-arm",
+      "container": "ubuntu:22.04",
+      "os_name": "linux",
+      "target_arch": "arm64",
       "exe_ext": "-ubuntu-22.04"
     },
     {
@@ -47,31 +71,7 @@
     }
   ],
 
-  "comment2": "runners hosted by the owner, enabled by the ENABLE_SELF_HOSTED variable being set on the repo",
+  "comment2": "Self-hosted runners are not used since the introduction of GitHub-hosted Linux arm64 runners.  The feature still exists if a new platform becomes necessary.",
   "selfHosted": [
-    {
-      "comment": "Alpine container for static Linux binaries",
-      "os": "self-hosted-linux-arm64",
-      "container": "alpine:3.20",
-      "os_name": "linux",
-      "target_arch": "arm64",
-      "exe_ext": ""
-    },
-    {
-      "comment": "Ubuntu 24.04 with hardware acceleration",
-      "os": "self-hosted-linux-arm64",
-      "container": "ubuntu:24.04",
-      "os_name": "linux",
-      "target_arch": "arm64",
-      "exe_ext": "-ubuntu-24.04"
-    },
-    {
-      "comment": "Ubuntu 22.04 with hardware acceleration",
-      "os": "self-hosted-linux-arm64",
-      "container": "ubuntu:22.04",
-      "os_name": "linux",
-      "target_arch": "arm64",
-      "exe_ext": "-ubuntu-22.04"
-    }
   ]
 }
