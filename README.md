@@ -83,7 +83,8 @@ rm -rf build
 docker run --rm -v $(pwd):/src -w /src ubuntu:24.04 /src/build.sh
 ```
 
-The build outputs will be in the `build/` folder.
+The build outputs will be in the `build/` folder, e.g.
+`build/ffmpeg/ffmpeg` and `build/ffmpeg/ffprobe`.
 
 
 [releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
