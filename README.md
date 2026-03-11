@@ -79,9 +79,12 @@ container to avoid polluting your system.
 You can run the above steps automatically in an Ubuntu Docker container with:
 
 ```sh
-docker build -t static-ffmpeg-binaries /path/to/static-ffmpeg-binaries
-docker run -v /path/to/static-ffmpeg-binaries:/src static-ffmpeg-binaries /src/build.sh
+rm -rf build
+docker run --rm -v $(pwd):/src -w /src ubuntu:24.04 /src/build.sh
 ```
+
+The build outputs will be in the `build/` folder, e.g.
+`build/ffmpeg/ffmpeg` and `build/ffmpeg/ffprobe`.
 
 
 [releases]: https://github.com/shaka-project/static-ffmpeg-binaries/releases
