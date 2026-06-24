@@ -1,4 +1,4 @@
-ffmpeg: n8.0.1
+ffmpeg: n8.0.3
 libvpx: v1.16.0
 svt-av1: v3.1.2
 x264: b35605ac
