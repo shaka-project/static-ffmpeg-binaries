@@ -2,7 +2,7 @@ ffmpeg: n8.0.3
 libvpx: v1.16.0
 svt-av1: v3.1.2
 x264: b35605ac
-x265: 4.1
+x265: 4.2
 lame: 3.100
 opus: v1.5.2
 mbedtls: v3.4.1
