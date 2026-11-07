@@ -10,6 +10,14 @@
       "exe_ext": ""
     },
     {
+      "comment": "Ubuntu 26.04 x64 with hardware acceleration",
+      "os": "ubuntu-latest",
+      "container": "ubuntu:26.04",
+      "os_name": "linux",
+      "target_arch": "x64",
+      "exe_ext": "-ubuntu-26.04"
+    },
+    {
       "comment": "Ubuntu 24.04 x64 with hardware acceleration",
       "os": "ubuntu-latest",
       "container": "ubuntu:24.04",
@@ -27,15 +35,23 @@
     },
     {
       "comment": "Alpine container for static Linux arm64 binaries",
-      "os": "ubuntu-24.04-arm",
+      "os": "ubuntu-26.04-arm",
       "container": "alpine:3.20",
       "os_name": "linux",
       "target_arch": "arm64",
       "exe_ext": ""
     },
     {
+      "comment": "Ubuntu 26.04 arm64 with hardware acceleration",
+      "os": "ubuntu-26.04-arm",
+      "container": "ubuntu:26.04",
+      "os_name": "linux",
+      "target_arch": "arm64",
+      "exe_ext": "-ubuntu-26.04"
+    },
+    {
       "comment": "Ubuntu 24.04 arm64 with hardware acceleration",
-      "os": "ubuntu-24.04-arm",
+      "os": "ubuntu-26.04-arm",
       "container": "ubuntu:24.04",
       "os_name": "linux",
       "target_arch": "arm64",
@@ -43,7 +59,7 @@
     },
     {
       "comment": "Ubuntu 22.04 arm64 with hardware acceleration",
-      "os": "ubuntu-24.04-arm",
+      "os": "ubuntu-26.04-arm",
       "container": "ubuntu:22.04",
       "os_name": "linux",
       "target_arch": "arm64",
